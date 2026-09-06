@@ -259,4 +259,102 @@ describe("PublicRoomRecommendationService", () => {
       }
     }
   });
+
+  it("keeps a family together when one requested room can accommodate everyone", async () => {
+    const catalog = {
+      getProperty: async () => ({ property })
+    } as unknown as PublicCatalogService;
+
+    const availability = {
+      search: async (
+        _db: unknown,
+        _slug: string,
+        request: { units: Array<{ adults: number; children: number }> }
+      ) => availabilityFor(request.units)
+    } as unknown as PublicAvailabilityService;
+
+    const service = new PublicRoomRecommendationService(catalog, availability, agePolicies);
+    const result = await service.recommend({} as never, property.publicSlug, {
+      arrivalDate: "2032-04-10",
+      departureDate: "2032-04-11",
+      adults: 2,
+      childAges: [8],
+      requestedRooms: 1
+    });
+
+    expect(result.recommendations.length).toBeGreaterThan(0);
+    expect(result.recommendations.every((recommendation) => recommendation.roomCount === 1)).toBe(
+      true
+    );
+
+    const best = result.recommendations[0]!;
+    expect(best.reason).toBe("BEST_VALUE");
+    expect(best.roomCount).toBe(1);
+    expect(best.estimatedTotalMinor).toBe(600_000);
+    expect(best.items).toEqual([
+      expect.objectContaining({
+        roomCategoryId: superId,
+        roomCategoryName: "Super Deluxe",
+        quantity: 1,
+        units: [{ adults: 2, children: 1, childAges: [8] }]
+      })
+    ]);
+  });
+
+  it("respects two requested rooms even when the party could fit in one room", async () => {
+    const catalog = {
+      getProperty: async () => ({ property })
+    } as unknown as PublicCatalogService;
+
+    const availability = {
+      search: async (
+        _db: unknown,
+        _slug: string,
+        request: { units: Array<{ adults: number; children: number }> }
+      ) => availabilityFor(request.units)
+    } as unknown as PublicAvailabilityService;
+
+    const service = new PublicRoomRecommendationService(catalog, availability, agePolicies);
+    const result = await service.recommend({} as never, property.publicSlug, {
+      arrivalDate: "2032-04-10",
+      departureDate: "2032-04-11",
+      adults: 2,
+      childAges: [8],
+      requestedRooms: 2
+    });
+
+    expect(result.recommendations.length).toBeGreaterThan(0);
+    expect(result.recommendations.every((recommendation) => recommendation.roomCount === 2)).toBe(
+      true
+    );
+  });
+
+  it("uses the smallest larger room count only when the requested room count cannot fit", async () => {
+    const catalog = {
+      getProperty: async () => ({ property })
+    } as unknown as PublicCatalogService;
+
+    const availability = {
+      search: async (
+        _db: unknown,
+        _slug: string,
+        request: { units: Array<{ adults: number; children: number }> }
+      ) => availabilityFor(request.units)
+    } as unknown as PublicAvailabilityService;
+
+    const service = new PublicRoomRecommendationService(catalog, availability, agePolicies);
+    const result = await service.recommend({} as never, property.publicSlug, {
+      arrivalDate: "2032-04-10",
+      departureDate: "2032-04-11",
+      adults: 3,
+      childAges: [8, 10],
+      requestedRooms: 1
+    });
+
+    expect(result.recommendations.length).toBeGreaterThan(0);
+    expect(result.recommendations.every((recommendation) => recommendation.roomCount === 2)).toBe(
+      true
+    );
+  });
+
 });
