@@ -3,6 +3,7 @@ export interface PublicRoomRecommendationRequest {
   departureDate: string;
   adults: number;
   childAges: number[];
+  requestedRooms?: number;
   maxRooms?: number;
 }
 
