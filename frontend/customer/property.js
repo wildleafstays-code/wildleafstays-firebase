@@ -501,9 +501,10 @@ async function searchRoomRecommendations() {
   }
 
   const totals = partyTotals();
+  const requestedRooms = requestedRoomCount();
   const complexSearch =
-    requestedRoomCount() > 1 || totals.adults + totals.children > 2;
-  if (!complexSearch) {
+    requestedRooms > 1 || totals.adults + totals.children > 2;
+  if (!complexSearch || requestedRooms > 6) {
     state.recommendationRequestVersion += 1;
     smartMatchSection?.classList.add("hidden");
     smartRecommendations?.replaceChildren();
@@ -546,6 +547,7 @@ async function searchRoomRecommendations() {
           departureDate: form.departureDate.value,
           adults: totals.adults,
           childAges: state.units.flatMap((unit) => [...unit.childAges]),
+          requestedRooms,
         },
       },
     );
