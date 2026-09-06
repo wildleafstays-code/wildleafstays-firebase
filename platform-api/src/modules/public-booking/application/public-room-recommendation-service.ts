@@ -137,7 +137,8 @@ function validateRequest(input: PublicRoomRecommendationRequest): {
       requestedRooms < 1 ||
       requestedRooms > MAX_RECOMMENDATION_ROOMS)
   ) {
-    throw new ValidationError(`requestedRooms must be between 1 and ${MAX_RECOMMENDATION_ROOMS}`);
+    const message = `requestedRooms must be between 1 and ${MAX_RECOMMENDATION_ROOMS}`;
+    throw new ValidationError(message);
   }
 
   const defaultMaxRooms = Math.min(input.adults, 4);
@@ -387,7 +388,9 @@ function chooseRoomIntentCandidates(
 ): PricedCandidate[] {
   if (requestedRooms === null) return priced;
 
-  const exact = priced.filter((candidate) => candidate.candidate.choices.length === requestedRooms);
+  const exact = priced.filter((candidate) => {
+    return candidate.candidate.choices.length === requestedRooms;
+  });
   if (exact.length > 0) return exact;
 
   const largerRoomCounts = priced
@@ -398,9 +401,9 @@ function chooseRoomIntentCandidates(
   const fallbackRoomCount = largerRoomCounts[0];
   if (fallbackRoomCount === undefined) return [];
 
-  return priced.filter(
-    (candidate) => candidate.candidate.choices.length === fallbackRoomCount
-  );
+  return priced.filter((candidate) => {
+    return candidate.candidate.choices.length === fallbackRoomCount;
+  });
 }
 
 function reasonFor(
