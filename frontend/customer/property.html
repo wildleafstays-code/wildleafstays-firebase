@@ -64,24 +64,26 @@
             </div>
 
             <form id="availabilityForm" class="availability-form compact-search-form">
-              <label class="compact-search-field">
-                <span>Check-in</span>
-                <input name="arrivalDate" type="date" required />
-              </label>
-              <label class="compact-search-field">
-                <span>Check-out</span>
-                <input name="departureDate" type="date" required />
-              </label>
-              <label id="unitCountField" class="compact-search-field compact-room-field">
-                <span id="unitCountLabel">Rooms</span>
-                <input
-                  name="unitCount"
-                  type="number"
-                  min="1"
-                  max="20"
-                  required
-                />
-              </label>
+              <div class="date-grid">
+                <label>
+                  <span>Check-in</span>
+                  <input name="arrivalDate" type="date" required />
+                </label>
+                <label>
+                  <span>Check-out</span>
+                  <input name="departureDate" type="date" required />
+                </label>
+                <label id="unitCountField">
+                  <span id="unitCountLabel">Rooms</span>
+                  <input
+                    name="unitCount"
+                    type="number"
+                    min="1"
+                    max="20"
+                    required
+                  />
+                </label>
+              </div>
               <details class="traveller-disclosure compact-guest-picker">
                 <summary>
                   <span>Guests</span>
