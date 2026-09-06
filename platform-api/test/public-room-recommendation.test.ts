@@ -283,9 +283,8 @@ describe("PublicRoomRecommendationService", () => {
     });
 
     expect(result.recommendations.length).toBeGreaterThan(0);
-    expect(
-      result.recommendations.every((recommendation) => recommendation.roomCount === 1)
-    ).toBe(true);
+    const roomCounts = result.recommendations.map((recommendation) => recommendation.roomCount);
+    expect(new Set(roomCounts)).toEqual(new Set([1]));
 
     const best = result.recommendations[0]!;
     expect(best.reason).toBe("BEST_VALUE");
@@ -324,12 +323,11 @@ describe("PublicRoomRecommendationService", () => {
     });
 
     expect(result.recommendations.length).toBeGreaterThan(0);
-    expect(
-      result.recommendations.every((recommendation) => recommendation.roomCount === 2)
-    ).toBe(true);
+    const roomCounts = result.recommendations.map((recommendation) => recommendation.roomCount);
+    expect(new Set(roomCounts)).toEqual(new Set([2]));
   });
 
-  it("uses the smallest larger room count only when the requested room count cannot fit", async () => {
+  it("adds rooms only when the requested count cannot fit", async () => {
     const catalog = {
       getProperty: async () => ({ property })
     } as unknown as PublicCatalogService;
@@ -352,9 +350,7 @@ describe("PublicRoomRecommendationService", () => {
     });
 
     expect(result.recommendations.length).toBeGreaterThan(0);
-    expect(
-      result.recommendations.every((recommendation) => recommendation.roomCount === 2)
-    ).toBe(true);
+    const roomCounts = result.recommendations.map((recommendation) => recommendation.roomCount);
+    expect(new Set(roomCounts)).toEqual(new Set([2]));
   });
-
 });
