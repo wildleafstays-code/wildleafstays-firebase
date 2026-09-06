@@ -457,7 +457,6 @@ function renderOccupancyUnits() {
     scheduleAvailabilitySearch();
   });
   childrenLabel.append(children);
-
   picker.append(adultsLabel, childrenLabel);
 
   if (unit.childAges.length) {
@@ -466,8 +465,11 @@ function renderOccupancyUnits() {
     unit.childAges.forEach((age, childIndex) => {
       const label = element("label");
       label.append(element("span", "", `Child ${childIndex + 1}`));
-      const select = integerSelect(age, 0, 17, (value) =>
-        value === 0 ? "Under 1" : `${value} years`,
+      const select = integerSelect(
+        age,
+        0,
+        17,
+        (value) => (value === 0 ? "Under 1" : `${value} years`),
       );
       select.setAttribute("aria-label", `Age of child ${childIndex + 1}`);
       select.addEventListener("change", () => {
@@ -924,7 +926,7 @@ async function searchAvailability({ resetBooking = true } = {}) {
   );
 
   try {
-    const units =
+    const discoveryUnits =
       state.bookingMode === "villa"
         ? state.units.map((unit) => ({
             adults: unit.adults,
@@ -939,7 +941,7 @@ async function searchAvailability({ resetBooking = true } = {}) {
         body: {
           arrivalDate: form.arrivalDate.value,
           departureDate: form.departureDate.value,
-          units,
+          units: discoveryUnits,
         },
       },
     );
@@ -1007,11 +1009,12 @@ async function refreshCategoryAvailabilityCounts(baseData, requestVersion) {
       option.available &&
       option.roomCategoryId,
   );
-  const categoryIds = [...new Set(baseAvailable.map((option) => option.roomCategoryId))];
+  const categoryIds = [
+    ...new Set(baseAvailable.map((option) => option.roomCategoryId)),
+  ];
   if (!categoryIds.length) return;
 
-  const baseSet = new Set(categoryIds);
-  state.availabilityProbeCache.set(1, baseSet);
+  state.availabilityProbeCache.set(1, new Set(categoryIds));
   categoryIds.forEach((id) => state.categoryAvailabilityCounts.set(id, 1));
   renderAvailability(baseData);
 
@@ -1039,11 +1042,11 @@ async function refreshCategoryAvailabilityCounts(baseData, requestVersion) {
     if (requestVersion !== state.availabilityRequestVersion) return;
     bounds.forEach((bound, categoryId) => {
       if (bound.high - bound.low <= 1) return;
-      const mid = Math.floor((bound.low + bound.high) / 2);
-      if (results.get(mid)?.has(categoryId)) {
-        bound.low = mid;
+      const middle = Math.floor((bound.low + bound.high) / 2);
+      if (results.get(middle)?.has(categoryId)) {
+        bound.low = middle;
       } else {
-        bound.high = mid;
+        bound.high = middle;
       }
     });
   }
@@ -1095,7 +1098,7 @@ function categoryAvailabilityCount(roomCategoryId) {
 
 function categoryAvailabilityLabel(roomCategoryId) {
   const count = categoryAvailabilityCount(roomCategoryId);
-  if (count === null) return "Checking live availability";
+  if (count === null) return "Checking availability";
   if (count >= 20) return "20+ rooms available";
   if (count === 1) return "Only 1 room available";
   return `${count} rooms available`;
@@ -1291,9 +1294,8 @@ function infantMaxAgeForUi() {
 }
 
 function childCountsTowardsOccupancy(age) {
-  const publishedPolicy = state.property?.guestAgePolicy;
-  if (publishedPolicy?.infantsCountTowardsOccupancy === true) return true;
-
+  const policy = state.property?.guestAgePolicy;
+  if (policy?.infantsCountTowardsOccupancy === true) return true;
   const infantMaxAge = infantMaxAgeForUi();
   if (infantMaxAge === null) return true;
   return Number(age) > infantMaxAge;
@@ -1312,16 +1314,20 @@ function roomUnitOccupancy(unit) {
 }
 
 function roomAdultMaximum(category, unit) {
-  const byAdults = category.maxAdults || category.maxOccupancy || 20;
-  const byOccupancy = Math.max(
+  const categoryAdultMax =
+    category.maxAdults || category.maxOccupancy || 20;
+  const occupancyMax = category.maxOccupancy || 20;
+  return Math.max(
     1,
-    (category.maxOccupancy || 20) - occupancyCountingChildren(unit),
+    Math.min(
+      categoryAdultMax,
+      occupancyMax - occupancyCountingChildren(unit),
+    ),
   );
-  return Math.max(1, Math.min(byAdults, byOccupancy));
 }
 
 function roomChildMaximum(category, unit) {
-  const maxChildren = category.maxChildren ?? 20;
+  const categoryChildMax = category.maxChildren ?? 20;
   const infantCount = unit.childAges.filter(
     (age) => !childCountsTowardsOccupancy(age),
   ).length;
@@ -1331,7 +1337,7 @@ function roomChildMaximum(category, unit) {
   );
   return Math.max(
     0,
-    Math.min(maxChildren, infantCount + remainingOccupancy),
+    Math.min(categoryChildMax, infantCount + remainingOccupancy),
   );
 }
 
@@ -1357,25 +1363,25 @@ function defaultRoomAllocation(category) {
     ),
   );
 
-  const allRequestedAges = state.units[0]?.childAges || [];
-  const alreadyAllocatedAges = [...state.roomSelections.values()].flatMap(
+  const requestedAges = [...(state.units[0]?.childAges || [])];
+  const allocatedAges = [...state.roomSelections.values()].flatMap(
     (selection) => selection.units.flatMap((unit) => unit.childAges),
   );
-  const remainingAges = [...allRequestedAges];
-  alreadyAllocatedAges.forEach((age) => {
-    const index = remainingAges.indexOf(age);
-    if (index >= 0) remainingAges.splice(index, 1);
+  allocatedAges.forEach((age) => {
+    const index = requestedAges.indexOf(age);
+    if (index >= 0) requestedAges.splice(index, 1);
   });
 
   const unit = { adults, childAges: [] };
-  for (const age of remainingAges) {
+  for (const age of requestedAges) {
     if (unit.childAges.length >= (category.maxChildren ?? 20)) break;
     const candidate = {
       adults: unit.adults,
       childAges: [...unit.childAges, age],
     };
-    if (!roomUnitValid(category, candidate)) continue;
-    unit.childAges.push(age);
+    if (roomUnitValid(category, candidate)) {
+      unit.childAges.push(age);
+    }
   }
   return unit;
 }
@@ -1397,7 +1403,11 @@ function renderRoomAllocationControls(category, selection) {
 
   selection.units.forEach((unit, index) => {
     const row = element("div", "room-allocation-row");
-    const title = element("strong", "room-allocation-title", `Room ${index + 1}`);
+    const title = element(
+      "strong",
+      "room-allocation-title",
+      `Room ${index + 1}`,
+    );
 
     const adultsLabel = element("label", "room-guest-field");
     adultsLabel.append(element("span", "", "Adults"));
@@ -1460,7 +1470,8 @@ function renderRoomAllocationControls(category, selection) {
         for (let value = 0; value <= 17; value += 1) {
           const ageOption = document.createElement("option");
           ageOption.value = String(value);
-          ageOption.textContent = value === 0 ? "Under 1" : `${value} years`;
+          ageOption.textContent =
+            value === 0 ? "Under 1" : `${value} years`;
           ageOption.selected = value === age;
 
           const candidateAges = [...unit.childAges];
@@ -1483,12 +1494,13 @@ function renderRoomAllocationControls(category, selection) {
       row.append(ages);
     }
 
-    const occupancyNote = element(
-      "small",
-      "room-occupancy-note",
-      `${roomUnitOccupancy(unit)} of ${category.maxOccupancy || 20} occupancy places used`,
+    row.append(
+      element(
+        "small",
+        "room-occupancy-note",
+        `${roomUnitOccupancy(unit)} of ${category.maxOccupancy || 20} occupancy places used`,
+      ),
     );
-    row.append(occupancyNote);
     section.append(row);
   });
 
@@ -1642,7 +1654,8 @@ function selectionValidation() {
     return {
       valid: false,
       warning: false,
-      message: "One selected room is no longer available. Please adjust your selection.",
+      message:
+        "One selected room is no longer available. Please adjust your selection.",
     };
   }
 
@@ -2582,7 +2595,12 @@ function detailLine(label, value) {
   return line;
 }
 
-function integerSelect(value, min, max, labelForValue = (entry) => String(entry)) {
+function integerSelect(
+  value,
+  min,
+  max,
+  labelForValue = (entry) => String(entry),
+) {
   const select = document.createElement("select");
   for (let entry = min; entry <= max; entry += 1) {
     const option = document.createElement("option");
