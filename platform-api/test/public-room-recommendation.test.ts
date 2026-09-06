@@ -283,9 +283,9 @@ describe("PublicRoomRecommendationService", () => {
     });
 
     expect(result.recommendations.length).toBeGreaterThan(0);
-    expect(result.recommendations.every((recommendation) => recommendation.roomCount === 1)).toBe(
-      true
-    );
+    expect(
+      result.recommendations.every((recommendation) => recommendation.roomCount === 1)
+    ).toBe(true);
 
     const best = result.recommendations[0]!;
     expect(best.reason).toBe("BEST_VALUE");
@@ -324,9 +324,9 @@ describe("PublicRoomRecommendationService", () => {
     });
 
     expect(result.recommendations.length).toBeGreaterThan(0);
-    expect(result.recommendations.every((recommendation) => recommendation.roomCount === 2)).toBe(
-      true
-    );
+    expect(
+      result.recommendations.every((recommendation) => recommendation.roomCount === 2)
+    ).toBe(true);
   });
 
   it("uses the smallest larger room count only when the requested room count cannot fit", async () => {
@@ -352,9 +352,9 @@ describe("PublicRoomRecommendationService", () => {
     });
 
     expect(result.recommendations.length).toBeGreaterThan(0);
-    expect(result.recommendations.every((recommendation) => recommendation.roomCount === 2)).toBe(
-      true
-    );
+    expect(
+      result.recommendations.every((recommendation) => recommendation.roomCount === 2)
+    ).toBe(true);
   });
 
 });
