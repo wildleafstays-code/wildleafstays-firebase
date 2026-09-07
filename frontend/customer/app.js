@@ -14,6 +14,17 @@ const mobileSearchTrigger = document.querySelector("#mobileSearchTrigger");
 const mobileSearchClose = document.querySelector("#mobileSearchClose");
 const mobileSearchLabel = document.querySelector("#mobileSearchLabel");
 const mobileSearchMeta = document.querySelector("#mobileSearchMeta");
+const hero = document.querySelector(".home-hero");
+const heroImage = document.querySelector("#heroImage");
+const heroOffer = document.querySelector("#heroOffer");
+const heroEyebrow = document.querySelector("#heroEyebrow");
+const heroHeadline = document.querySelector("#heroHeadline");
+const heroSubtitle = document.querySelector("#heroSubtitle");
+const heroCta = document.querySelector("#heroCta");
+const heroSliderControls = document.querySelector("#heroSliderControls");
+const heroPrevious = document.querySelector("#heroPrevious");
+const heroNext = document.querySelector("#heroNext");
+const heroDots = document.querySelector("#heroDots");
 
 const state = {
   mode:
@@ -21,6 +32,9 @@ const state = {
       ? "villa"
       : "hotel",
   properties: [],
+  heroSlides: [],
+  heroIndex: 0,
+  heroTimer: null,
 };
 
 setDefaultDates();
@@ -68,7 +82,48 @@ modeLinks.forEach((link) => {
 
 async function initialize() {
   renderLoadingCards();
-  await Promise.allSettled([loadDestinations(), loadProperties("")]);
+  const [homepageResult] = await Promise.allSettled([
+    loadHomepageContent(),
+    loadProperties(""),
+  ]);
+  if (homepageResult.status === "rejected") {
+    await loadDestinations();
+  }
+}
+
+async function loadHomepageContent() {
+  const data = await apiRequest("/v1/public/homepage", {
+    cache: "default",
+  });
+  const destinations = data.destinations || [];
+  populateDestinationSuggestions(destinations);
+  renderDestinations(destinations);
+
+  state.heroSlides = data.heroSlides || [];
+  state.heroIndex = 0;
+  if (state.heroSlides.length) {
+    renderManagedHero(0);
+    renderHeroDots();
+    resetHeroTimer();
+  } else {
+    stopHeroTimer();
+    hero?.classList.remove("managed-hero");
+    heroSliderControls?.classList.add("hidden");
+    updateHero(state.properties);
+  }
+}
+
+function populateDestinationSuggestions(destinations) {
+  destinationList.replaceChildren(
+    ...destinations.map((destination) => {
+      const option = document.createElement("option");
+      option.value = destination.city;
+      option.label = [destination.city, destination.stateRegion]
+        .filter(Boolean)
+        .join(", ");
+      return option;
+    }),
+  );
 }
 
 async function loadDestinations() {
@@ -77,16 +132,7 @@ async function loadDestinations() {
       cache: "default",
     });
     const destinations = data.destinations || [];
-    destinationList.replaceChildren(
-      ...destinations.map((destination) => {
-        const option = document.createElement("option");
-        option.value = destination.city;
-        option.label = [destination.city, destination.stateRegion]
-          .filter(Boolean)
-          .join(", ");
-        return option;
-      }),
-    );
+    populateDestinationSuggestions(destinations);
     renderDestinations(destinations);
   } catch {
     destinationRail?.replaceChildren();
@@ -98,23 +144,50 @@ function renderDestinations(destinations) {
   if (!destinationRail) return;
   destinationRail.replaceChildren(
     ...destinations.map((destination) => {
-      const button = element("button", "destination-card");
+      const button = element(
+        "button",
+        destination.imageId
+          ? "destination-card destination-card-image"
+          : "destination-card",
+      );
       button.type = "button";
       const place = [destination.city, destination.stateRegion]
         .filter(Boolean)
         .join(", ");
       button.setAttribute("aria-label", `Explore stays in ${place}`);
-      button.append(
-        element(
-          "span",
-          "destination-mark",
-          String(destination.city || "W").trim().charAt(0).toUpperCase(),
-        ),
+
+      if (destination.imageId) {
+        const image = element("img", "destination-card-photo");
+        image.src = homepageMediaUrl(destination.imageId);
+        image.alt = destination.altText || place;
+        image.loading = "lazy";
+        image.decoding = "async";
+        button.append(image);
+        const shade = element("span", "destination-card-shade");
+        button.append(shade);
+      } else {
+        button.append(
+          element(
+            "span",
+            "destination-mark",
+            String(destination.city || "W").trim().charAt(0).toUpperCase(),
+          ),
+        );
+      }
+
+      const copy = element("span", "destination-card-copy");
+      copy.append(
         element("strong", "", destination.city),
-        destination.stateRegion
-          ? element("small", "", destination.stateRegion)
-          : document.createTextNode(""),
+        element(
+          "small",
+          "",
+          destination.propertyCount
+            ? `${destination.propertyCount} ${destination.propertyCount === 1 ? "property" : "properties"}`
+            : destination.stateRegion || "",
+        ),
       );
+      button.append(copy);
+
       button.addEventListener("click", () => {
         form.destination.value = destination.city;
         updateMobileSearchSummary();
@@ -255,7 +328,7 @@ function propertyCard(property, index) {
 }
 
 function updateHero(properties) {
-  const hero = document.querySelector(".home-hero");
+  if (state.heroSlides.length) return;
   const featured = properties.find((property) => property.coverMediaId);
   if (!hero || !featured) {
     hero?.classList.remove("has-property-image");
@@ -269,6 +342,127 @@ function updateHero(properties) {
   );
   hero.classList.add("has-property-image");
 }
+
+function homepageMediaUrl(mediaId) {
+  return `/v1/public/homepage/media/${encodeURIComponent(mediaId)}`;
+}
+
+function renderManagedHero(index) {
+  if (!state.heroSlides.length || !hero || !heroImage) return;
+  const normalizedIndex =
+    ((index % state.heroSlides.length) + state.heroSlides.length) %
+    state.heroSlides.length;
+  state.heroIndex = normalizedIndex;
+  const slide = state.heroSlides[normalizedIndex];
+
+  hero.classList.add("managed-hero");
+  hero.classList.remove("has-property-image");
+  hero.style.removeProperty("--home-hero-image");
+
+  heroImage.src = homepageMediaUrl(slide.imageId);
+  heroImage.alt = slide.altText || "";
+  heroImage.style.objectPosition =
+    `${slide.focalXPercent}% ${slide.focalYPercent}%`;
+
+  heroEyebrow.textContent = "Wildleaf stays";
+  heroHeadline.textContent = slide.headline;
+  heroSubtitle.textContent =
+    slide.subtitle || "Handpicked stays with live availability and secure booking.";
+
+  heroOffer.textContent = slide.offerLabel || "";
+  heroOffer.classList.toggle("hidden", !slide.offerLabel);
+
+  if (slide.ctaLabel && slide.ctaHref) {
+    heroCta.textContent = slide.ctaLabel;
+    heroCta.href = slide.ctaHref;
+    heroCta.classList.remove("hidden");
+  } else {
+    heroCta.classList.add("hidden");
+  }
+
+  heroSliderControls?.classList.toggle("hidden", state.heroSlides.length <= 1);
+  updateHeroDotState();
+}
+
+function renderHeroDots() {
+  if (!heroDots) return;
+  heroDots.replaceChildren();
+  state.heroSlides.forEach((slide, index) => {
+    const dot = element("button", "hero-dot");
+    dot.type = "button";
+    dot.setAttribute("role", "tab");
+    dot.setAttribute("aria-label", `Show highlight ${index + 1}: ${slide.headline}`);
+    dot.addEventListener("click", () => {
+      renderManagedHero(index);
+      resetHeroTimer();
+    });
+    heroDots.append(dot);
+  });
+  updateHeroDotState();
+}
+
+function updateHeroDotState() {
+  if (!heroDots) return;
+  [...heroDots.children].forEach((dot, index) => {
+    const active = index === state.heroIndex;
+    dot.classList.toggle("active", active);
+    dot.setAttribute("aria-selected", String(active));
+  });
+}
+
+function stepHero(direction) {
+  if (state.heroSlides.length <= 1) return;
+  renderManagedHero(state.heroIndex + direction);
+  resetHeroTimer();
+}
+
+function stopHeroTimer() {
+  if (state.heroTimer) {
+    window.clearInterval(state.heroTimer);
+    state.heroTimer = null;
+  }
+}
+
+function resetHeroTimer() {
+  stopHeroTimer();
+  if (
+    state.heroSlides.length <= 1 ||
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+  ) {
+    return;
+  }
+  state.heroTimer = window.setInterval(() => {
+    renderManagedHero(state.heroIndex + 1);
+  }, 6500);
+}
+
+heroPrevious?.addEventListener("click", () => stepHero(-1));
+heroNext?.addEventListener("click", () => stepHero(1));
+hero?.addEventListener("mouseenter", stopHeroTimer);
+hero?.addEventListener("mouseleave", resetHeroTimer);
+hero?.addEventListener("focusin", stopHeroTimer);
+hero?.addEventListener("focusout", resetHeroTimer);
+
+let heroTouchStartX = null;
+hero?.addEventListener(
+  "touchstart",
+  (event) => {
+    heroTouchStartX = event.touches[0]?.clientX ?? null;
+  },
+  { passive: true },
+);
+hero?.addEventListener(
+  "touchend",
+  (event) => {
+    if (heroTouchStartX === null) return;
+    const endX = event.changedTouches[0]?.clientX ?? heroTouchStartX;
+    const delta = endX - heroTouchStartX;
+    heroTouchStartX = null;
+    if (Math.abs(delta) < 45) return;
+    stepHero(delta > 0 ? -1 : 1);
+  },
+  { passive: true },
+);
 
 function propertyMediaUrl(publicSlug, mediaId) {
   return `/v1/public/properties/${encodeURIComponent(publicSlug)}/media/${encodeURIComponent(mediaId)}`;
