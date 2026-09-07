@@ -25,8 +25,6 @@ import {
   type HomepageLiveDestinationRecord
 } from "../infrastructure/homepage-content-repository.js";
 
-type DbExecutor = Kysely<Database> | Transaction<Database>;
-
 function trimmed(value: string, label: string, maxLength: number): string {
   const normalized = value.trim();
   if (!normalized) {
