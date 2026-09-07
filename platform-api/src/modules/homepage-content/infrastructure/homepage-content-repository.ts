@@ -219,7 +219,7 @@ export class HomepageContentRepository {
       .where("status", "=", "ACTIVE")
       .where(sql<boolean>`lower(btrim(city)) = lower(btrim(${city}))`)
       .where(
-        sql<boolean>`lower(btrim(coalesce(state_region, ''))) = lower(btrim(coalesce(${stateRegion}, '')))`
+        sql<boolean>`lower(btrim(coalesce(state_region, ''))) = lower(btrim(${stateRegion ?? ""}))`
       )
       .where("country_code", "=", countryCode)
       .executeTakeFirst();
