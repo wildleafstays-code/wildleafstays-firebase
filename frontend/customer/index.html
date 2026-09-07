@@ -23,75 +23,114 @@
         <span class="brand-mark" aria-hidden="true">W</span>
         <span><strong>Wildleaf</strong><small>STAYS</small></span>
       </a>
-      <nav class="site-nav" aria-label="Primary navigation">
+
+      <nav class="site-nav desktop-nav" aria-label="Primary navigation">
+        <a href="#destinations">Destinations</a>
         <a href="#stays" data-nav-mode="hotel">Hotels</a>
         <a href="#stays" data-nav-mode="villa">Entire villas</a>
+        <a href="#why-wildleaf">Why Wildleaf</a>
         <a href="#contact">Contact</a>
       </nav>
+
+      <details class="mobile-menu">
+        <summary aria-label="Open navigation menu">☰</summary>
+        <nav aria-label="Mobile navigation">
+          <a href="#destinations">Destinations</a>
+          <a href="#stays" data-nav-mode="hotel">Hotels</a>
+          <a href="#stays" data-nav-mode="villa">Entire villas</a>
+          <a href="#why-wildleaf">Why Wildleaf</a>
+          <a href="#contact">Contact</a>
+        </nav>
+      </details>
     </header>
 
     <main>
       <section class="home-hero">
         <div class="hero-content">
-          <p class="eyebrow">Stay somewhere worth remembering</p>
+          <p class="eyebrow">Thoughtful stays, naturally</p>
           <h1>Find a stay that feels right.</h1>
           <p class="hero-copy">
-            Explore distinctive hotels and entire villas with live availability,
-            clear room choices, and secure booking from Wildleaf.
+            Handpicked hotels and private villas with live availability and secure booking.
           </p>
         </div>
 
-        <div class="stay-mode-switch" role="tablist" aria-label="Stay type">
-          <button
-            id="modeHotel"
-            class="stay-mode-button active"
-            type="button"
-            role="tab"
-            aria-selected="true"
-            data-mode="hotel"
-          >
-            <span class="mode-icon" aria-hidden="true">▦</span>
-            <span
-              ><strong>Hotel rooms</strong
-              ><small>Book one or more rooms</small></span
-            >
-          </button>
-          <button
-            id="modeVilla"
-            class="stay-mode-button"
-            type="button"
-            role="tab"
-            aria-selected="false"
-            data-mode="villa"
-          >
-            <span class="mode-icon" aria-hidden="true">⌂</span>
-            <span
-              ><strong>Entire villas</strong
-              ><small>Book the complete property</small></span
-            >
-          </button>
-        </div>
+        <button
+          id="mobileSearchTrigger"
+          class="mobile-search-trigger"
+          type="button"
+          aria-controls="searchForm"
+          aria-expanded="false"
+        >
+          <span class="mobile-search-icon" aria-hidden="true">⌕</span>
+          <span>
+            <strong id="mobileSearchLabel">Search destination or stay</strong>
+            <small id="mobileSearchMeta">Add dates · 2 guests · 1 room</small>
+          </span>
+          <span class="mobile-search-arrow" aria-hidden="true">→</span>
+        </button>
 
         <form
           id="searchForm"
           class="search-card"
           aria-label="Find a Wildleaf stay"
         >
+          <div class="mobile-search-panel-head">
+            <div>
+              <small>Plan your stay</small>
+              <strong>Search Wildleaf</strong>
+            </div>
+            <button
+              id="mobileSearchClose"
+              class="mobile-search-close"
+              type="button"
+              aria-label="Close search"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="stay-mode-switch" role="tablist" aria-label="Stay type">
+            <button
+              id="modeHotel"
+              class="stay-mode-button active"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              data-mode="hotel"
+            >
+              <span class="mode-icon" aria-hidden="true">▦</span>
+              <span><strong>Hotel rooms</strong><small>Book by room</small></span>
+            </button>
+            <button
+              id="modeVilla"
+              class="stay-mode-button"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              data-mode="villa"
+            >
+              <span class="mode-icon" aria-hidden="true">⌂</span>
+              <span><strong>Entire villas</strong><small>Private use</small></span>
+            </button>
+          </div>
+
           <label class="search-field search-destination">
             <span>Where</span>
             <input
               id="destination"
               name="destination"
               list="destinationList"
-              placeholder="Choose a destination"
+              placeholder="City, destination or property"
               autocomplete="off"
             />
             <datalist id="destinationList"></datalist>
           </label>
+
           <label class="search-field">
             <span>Check-in</span>
             <input id="arrivalDate" name="arrivalDate" type="date" required />
           </label>
+
           <label class="search-field">
             <span>Check-out</span>
             <input
@@ -101,46 +140,61 @@
               required
             />
           </label>
-          <label id="roomCountField" class="search-field compact-field">
-            <span id="roomsLabel">Rooms</span>
-            <input
-              id="rooms"
-              name="rooms"
-              type="number"
-              min="1"
-              max="20"
-              value="1"
-              required
-            />
-          </label>
-          <label class="search-field compact-field">
-            <span id="adultsLabel">Adults / room</span>
-            <input
-              id="adults"
-              name="adults"
-              type="number"
-              min="1"
-              max="10"
-              value="2"
-              required
-            />
-          </label>
-          <label class="search-field compact-field">
-            <span id="childrenLabel">Children / room</span>
-            <input
-              id="children"
-              name="children"
-              type="number"
-              min="0"
-              max="6"
-              value="0"
-              required
-            />
-          </label>
+
+          <div class="search-guest-group" aria-label="Guests and rooms">
+            <label id="roomCountField" class="search-field compact-field">
+              <span id="roomsLabel">Rooms</span>
+              <input
+                id="rooms"
+                name="rooms"
+                type="number"
+                min="1"
+                max="20"
+                value="1"
+                required
+              />
+            </label>
+            <label class="search-field compact-field">
+              <span id="adultsLabel">Adults / room</span>
+              <input
+                id="adults"
+                name="adults"
+                type="number"
+                min="1"
+                max="10"
+                value="2"
+                required
+              />
+            </label>
+            <label class="search-field compact-field">
+              <span id="childrenLabel">Children / room</span>
+              <input
+                id="children"
+                name="children"
+                type="number"
+                min="0"
+                max="6"
+                value="0"
+                required
+              />
+            </label>
+          </div>
+
           <button class="button button-primary search-button" type="submit">
             Search hotels
           </button>
         </form>
+      </section>
+
+      <section id="destinations" class="destination-section" aria-labelledby="destinationHeading">
+        <div class="discovery-heading">
+          <div>
+            <p class="eyebrow">Explore Wildleaf</p>
+            <h2 id="destinationHeading">Pick a destination</h2>
+          </div>
+          <p>Start with somewhere that catches your eye.</p>
+        </div>
+        <div id="destinationRail" class="destination-rail" aria-live="polite"></div>
       </section>
 
       <section id="stays" class="section stays-section">
