@@ -12,7 +12,6 @@ import {
 } from "../application/homepage-content-upload-service.js";
 import {
   AuthenticationError,
-  NotFoundError,
   ValidationError
 } from "../../../shared/errors/app-error.js";
 import { requireAuthentication } from "../../../shared/http/authenticate.js";
@@ -389,6 +388,32 @@ export async function registerHomepageContentRoutes(
     }
   );
 
+  app.get<{ Params: HomepageMediaParams }>(
+    "/v1/platform/homepage-content/media/:mediaId/read-url",
+    {
+      preHandler: authenticate,
+      schema: {
+        tags: ["Homepage Content"],
+        summary: "Create a short-lived preview URL for a managed homepage image",
+        security: [{ bearerAuth: [] }],
+        params: publicMediaParamsSchema
+      }
+    },
+    async (request, reply) => {
+      const actor = request.actor;
+      if (!actor) throw new AuthenticationError();
+      const storageKey = await service.getAdminMediaStorage(
+        deps.db,
+        actor,
+        request.params.mediaId
+      );
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+      const url = await deps.propertyAssetStorage.createReadUrl(storageKey, expiresAt);
+      void reply.header("cache-control", "no-store");
+      return { url, expiresAt: expiresAt.toISOString() };
+    }
+  );
+
   app.post<{
     Querystring: HeroCreateQuery;
     Headers: ManagedUploadHeaders;
@@ -450,7 +475,18 @@ export async function registerHomepageContentRoutes(
           scopeKey: `homepage.hero.create:user:${actor.userId}`,
           key,
           requestBody: {
-            ...request.query,
+            headline: request.query.headline,
+            subtitle: request.query.subtitle ?? null,
+            offerLabel: request.query.offerLabel ?? null,
+            ctaLabel: request.query.ctaLabel ?? null,
+            ctaHref: request.query.ctaHref ?? null,
+            altText: request.query.altText ?? null,
+            focalXPercent: request.query.focalXPercent ?? 50,
+            focalYPercent: request.query.focalYPercent ?? 50,
+            sortOrder: request.query.sortOrder ?? 0,
+            enabled: request.query.enabled ?? false,
+            startsAt: request.query.startsAt ?? null,
+            endsAt: request.query.endsAt ?? null,
             contentSha256,
             contentType: part.mimetype
           }
@@ -564,7 +600,8 @@ export async function registerHomepageContentRoutes(
           scopeKey: `homepage.hero.image:${request.params.id}:user:${actor.userId}`,
           key,
           requestBody: {
-            ...request.query,
+            version: request.query.version,
+            altText: request.query.altText ?? null,
             contentSha256,
             contentType: part.mimetype
           }
@@ -682,7 +719,12 @@ export async function registerHomepageContentRoutes(
           scopeKey: `homepage.destination.create:user:${actor.userId}`,
           key,
           requestBody: {
-            ...request.query,
+            city: request.query.city,
+            stateRegion: request.query.stateRegion ?? null,
+            countryCode: request.query.countryCode,
+            altText: request.query.altText ?? null,
+            sortOrder: request.query.sortOrder ?? 0,
+            enabled: request.query.enabled ?? true,
             contentSha256,
             contentType: part.mimetype
           }
@@ -792,7 +834,8 @@ export async function registerHomepageContentRoutes(
           scopeKey: `homepage.destination.image:${request.params.id}:user:${actor.userId}`,
           key,
           requestBody: {
-            ...request.query,
+            version: request.query.version,
+            altText: request.query.altText ?? null,
             contentSha256,
             contentType: part.mimetype
           }
