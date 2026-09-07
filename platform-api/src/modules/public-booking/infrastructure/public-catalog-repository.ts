@@ -75,6 +75,9 @@ export interface PublicMediaRecord {
 export interface PublicRoomCategoryMediaRecord {
   id: string;
   room_category_id: string;
+  mime_type: string | null;
+  alt_text: string | null;
+  caption: string | null;
   sort_order: number;
 }
 
@@ -231,6 +234,9 @@ export class PublicCatalogRepository {
       .select([
         "media.id as id",
         "media.room_category_id as room_category_id",
+        "media.mime_type as mime_type",
+        "media.alt_text as alt_text",
+        "media.caption as caption",
         "media.sort_order as sort_order"
       ])
       .where("media.organization_id", "=", organizationId)
