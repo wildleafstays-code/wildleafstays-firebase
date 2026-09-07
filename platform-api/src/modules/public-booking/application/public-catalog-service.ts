@@ -91,21 +91,21 @@ export class PublicCatalogService {
     const roomCategories: PublicRoomCategoryView[] = roomRows.map((row) => {
       const media = categoryMedia.get(row.id) ?? [];
       return {
-      roomCategoryId: row.id,
-      coverMediaId: media[0]?.id ?? null,
-      media,
-      code: row.code,
-      name: row.name,
-      accommodationType: row.accommodation_type,
-      description: row.description,
-      baseOccupancy: row.base_occupancy,
-      maxAdults: row.max_adults,
-      maxChildren: row.max_children,
-      maxOccupancy: row.max_occupancy,
-      sizeSqm: row.size_sqm === null ? null : Number(row.size_sqm),
-      bedConfiguration: row.bed_configuration,
-      extraBedAllowed: row.extra_bed_allowed,
-      defaultViewLabel: row.default_view_label
+        roomCategoryId: row.id,
+        coverMediaId: media[0]?.id ?? null,
+        media,
+        code: row.code,
+        name: row.name,
+        accommodationType: row.accommodation_type,
+        description: row.description,
+        baseOccupancy: row.base_occupancy,
+        maxAdults: row.max_adults,
+        maxChildren: row.max_children,
+        maxOccupancy: row.max_occupancy,
+        sizeSqm: row.size_sqm === null ? null : Number(row.size_sqm),
+        bedConfiguration: row.bed_configuration,
+        extraBedAllowed: row.extra_bed_allowed,
+        defaultViewLabel: row.default_view_label
       };
     });
 
