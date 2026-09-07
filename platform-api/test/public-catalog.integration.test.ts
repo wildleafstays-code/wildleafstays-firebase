@@ -21,6 +21,8 @@ interface Fixture {
   amenityCode: string;
   activeMediaId: string;
   archivedMediaId: string;
+  activeRoomMediaId: string;
+  archivedRoomMediaId: string;
   privateEmail: string;
   privatePhone: string;
   privateAddress: string;
@@ -40,6 +42,8 @@ async function createFixture(): Promise<Fixture> {
   const retiredRoomCategoryId = randomUUID();
   const activeMediaId = randomUUID();
   const archivedMediaId = randomUUID();
+  const activeRoomMediaId = randomUUID();
+  const archivedRoomMediaId = randomUUID();
   const publicSlug = `wildleaf-catalog-${suffix}`;
   const draftSlug = `draft-${suffix}`;
   const city = `Catalog City ${suffix}`;
@@ -249,6 +253,40 @@ async function createFixture(): Promise<Fixture> {
     ])
     .execute();
 
+  await db
+    .insertInto("room_category_media")
+    .values([
+      {
+        id: activeRoomMediaId,
+        organization_id: organizationId,
+        property_id: livePropertyId,
+        room_category_id: activeRoomCategoryId,
+        storage_provider: "OTHER",
+        storage_key: `private/catalog/${suffix}/room-active.jpg`,
+        mime_type: "image/jpeg",
+        alt_text: "Premium Cottage bedroom",
+        caption: "Premium Cottage",
+        sort_order: 1,
+        status: "ACTIVE",
+        created_by_user_id: null
+      },
+      {
+        id: archivedRoomMediaId,
+        organization_id: organizationId,
+        property_id: livePropertyId,
+        room_category_id: activeRoomCategoryId,
+        storage_provider: "OTHER",
+        storage_key: `private/catalog/${suffix}/room-archived.jpg`,
+        mime_type: "image/jpeg",
+        alt_text: "Archived room image",
+        caption: "Must not be public",
+        sort_order: 2,
+        status: "ARCHIVED",
+        created_by_user_id: null
+      }
+    ])
+    .execute();
+
   return {
     organizationId,
     draftPropertyId,
@@ -261,6 +299,8 @@ async function createFixture(): Promise<Fixture> {
     amenityCode,
     activeMediaId,
     archivedMediaId,
+    activeRoomMediaId,
+    archivedRoomMediaId,
     privateEmail,
     privatePhone,
     privateAddress,
@@ -383,7 +423,19 @@ describe("Phase 6A public property catalog", () => {
     const body = response.json() as {
       property: {
         publicSlug: string;
-        roomCategories: Array<{ roomCategoryId: string; name: string }>;
+        roomCategories: Array<{
+          roomCategoryId: string;
+          name: string;
+          coverMediaId: string | null;
+          media: Array<{
+            id: string;
+            mediaType: string;
+            mimeType: string | null;
+            altText: string | null;
+            caption: string | null;
+            sortOrder: number;
+          }>;
+        }>;
         amenities: Array<{ code: string; name: string }>;
         policies: Record<string, unknown> | null;
         media: Array<{ id: string; mediaType: string; isCover: boolean }>;
@@ -399,6 +451,25 @@ describe("Phase 6A public property catalog", () => {
     );
     expect(body.property.roomCategories).not.toContainEqual(
       expect.objectContaining({ roomCategoryId: fixture.retiredRoomCategoryId })
+    );
+    const activeRoom = body.property.roomCategories.find(
+      (category) => category.roomCategoryId === fixture.activeRoomCategoryId
+    );
+    expect(activeRoom).toMatchObject({
+      coverMediaId: fixture.activeRoomMediaId,
+      media: [
+        {
+          id: fixture.activeRoomMediaId,
+          mediaType: "IMAGE",
+          mimeType: "image/jpeg",
+          altText: "Premium Cottage bedroom",
+          caption: "Premium Cottage",
+          sortOrder: 1
+        }
+      ]
+    });
+    expect(activeRoom?.media).not.toContainEqual(
+      expect.objectContaining({ id: fixture.archivedRoomMediaId })
     );
     expect(body.property.amenities).toContainEqual(
       expect.objectContaining({ code: fixture.amenityCode })

@@ -9,6 +9,11 @@ const resultsEyebrow = document.querySelector("#resultsEyebrow");
 const modeButtons = [...document.querySelectorAll("[data-mode]")];
 const modeLinks = [...document.querySelectorAll("[data-nav-mode]")];
 const roomCountField = document.querySelector("#roomCountField");
+const destinationRail = document.querySelector("#destinationRail");
+const mobileSearchTrigger = document.querySelector("#mobileSearchTrigger");
+const mobileSearchClose = document.querySelector("#mobileSearchClose");
+const mobileSearchLabel = document.querySelector("#mobileSearchLabel");
+const mobileSearchMeta = document.querySelector("#mobileSearchMeta");
 
 const state = {
   mode:
@@ -24,7 +29,21 @@ void initialize();
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
+  closeMobileSearch();
   void loadProperties(form.destination.value.trim());
+  document.querySelector("#stays")?.scrollIntoView({
+    block: "start",
+    behavior: "smooth",
+  });
+});
+
+mobileSearchTrigger?.addEventListener("click", openMobileSearch);
+mobileSearchClose?.addEventListener("click", closeMobileSearch);
+form.addEventListener("input", updateMobileSearchSummary);
+form.addEventListener("change", updateMobileSearchSummary);
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeMobileSearch();
 });
 
 modeButtons.forEach((button) => {
@@ -34,7 +53,6 @@ modeButtons.forEach((button) => {
     state.mode = mode;
     applyMode();
     renderProperties(state.properties);
-    document.querySelector("#stays")?.scrollIntoView({ block: "start" });
   });
 });
 
@@ -58,8 +76,9 @@ async function loadDestinations() {
     const data = await apiRequest("/v1/public/destinations", {
       cache: "default",
     });
+    const destinations = data.destinations || [];
     destinationList.replaceChildren(
-      ...(data.destinations || []).map((destination) => {
+      ...destinations.map((destination) => {
         const option = document.createElement("option");
         option.value = destination.city;
         option.label = [destination.city, destination.stateRegion]
@@ -68,9 +87,46 @@ async function loadDestinations() {
         return option;
       }),
     );
+    renderDestinations(destinations);
   } catch {
+    destinationRail?.replaceChildren();
     // Property discovery remains usable when destination suggestions are unavailable.
   }
+}
+
+function renderDestinations(destinations) {
+  if (!destinationRail) return;
+  destinationRail.replaceChildren(
+    ...destinations.map((destination) => {
+      const button = element("button", "destination-card");
+      button.type = "button";
+      const place = [destination.city, destination.stateRegion]
+        .filter(Boolean)
+        .join(", ");
+      button.setAttribute("aria-label", `Explore stays in ${place}`);
+      button.append(
+        element(
+          "span",
+          "destination-mark",
+          String(destination.city || "W").trim().charAt(0).toUpperCase(),
+        ),
+        element("strong", "", destination.city),
+        destination.stateRegion
+          ? element("small", "", destination.stateRegion)
+          : document.createTextNode(""),
+      );
+      button.addEventListener("click", () => {
+        form.destination.value = destination.city;
+        updateMobileSearchSummary();
+        void loadProperties(destination.city);
+        document.querySelector("#stays")?.scrollIntoView({
+          block: "start",
+          behavior: "smooth",
+        });
+      });
+      return button;
+    }),
+  );
 }
 
 async function loadProperties(destination) {
@@ -255,6 +311,49 @@ function applyMode() {
     ? "Villas reserved only for you"
     : "Hotels you can book by room";
   history.replaceState(null, "", `${location.pathname}?mode=${state.mode}`);
+  updateMobileSearchSummary();
+}
+
+function openMobileSearch() {
+  document.body.classList.add("home-search-open");
+  mobileSearchTrigger?.setAttribute("aria-expanded", "true");
+  window.setTimeout(() => form.destination?.focus(), 50);
+}
+
+function closeMobileSearch() {
+  document.body.classList.remove("home-search-open");
+  mobileSearchTrigger?.setAttribute("aria-expanded", "false");
+}
+
+function updateMobileSearchSummary() {
+  if (!mobileSearchLabel || !mobileSearchMeta) return;
+  const destination = form.destination.value.trim();
+  mobileSearchLabel.textContent = destination || "Search destination or stay";
+
+  const adults = Math.max(1, Number(form.adults.value) || 1);
+  const children = Math.max(0, Number(form.children.value) || 0);
+  const rooms =
+    state.mode === "villa" ? 1 : Math.max(1, Number(form.rooms.value) || 1);
+  const guestCount = adults + children;
+  const dates =
+    form.arrivalDate.value && form.departureDate.value
+      ? `${shortDate(form.arrivalDate.value)} – ${shortDate(form.departureDate.value)}`
+      : "Add dates";
+  const roomLabel =
+    state.mode === "villa"
+      ? "entire villa"
+      : `${rooms} ${rooms === 1 ? "room" : "rooms"}`;
+  mobileSearchMeta.textContent =
+    `${dates} · ${guestCount} ${guestCount === 1 ? "guest" : "guests"} · ${roomLabel}`;
+}
+
+function shortDate(value) {
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return "Add dates";
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+  }).format(date);
 }
 
 function saleModeAllows(saleMode, mode) {
@@ -312,7 +411,9 @@ function setDefaultDates() {
     if (form.departureDate.value <= form.arrivalDate.value) {
       form.departureDate.value = minimumDeparture;
     }
+    updateMobileSearchSummary();
   });
+  updateMobileSearchSummary();
 }
 
 function dateValue(date) {

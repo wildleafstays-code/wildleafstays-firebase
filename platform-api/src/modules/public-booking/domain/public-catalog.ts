@@ -21,6 +21,7 @@ export interface PublicPropertySummaryView {
 export interface PublicRoomCategoryView {
   roomCategoryId: string;
   coverMediaId: string | null;
+  media?: PublicRoomCategoryMediaView[];
   code: string;
   name: string;
   accommodationType: string;
@@ -33,6 +34,15 @@ export interface PublicRoomCategoryView {
   bedConfiguration: string | null;
   extraBedAllowed: boolean;
   defaultViewLabel: string | null;
+}
+
+export interface PublicRoomCategoryMediaView {
+  id: string;
+  mediaType: "IMAGE";
+  mimeType: string | null;
+  altText: string | null;
+  caption: string | null;
+  sortOrder: number;
 }
 
 export interface PublicAmenityView {

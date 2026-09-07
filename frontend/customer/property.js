@@ -47,6 +47,7 @@ const state = {
   availabilityTimer: null,
   availabilityRequestVersion: 0,
   galleryMedia: [],
+  photoMedia: [],
   galleryIndex: 0,
   recommendationRequestVersion: 0,
   roomSelections: new Map(),
@@ -252,6 +253,7 @@ function renderPropertyGallery(property) {
     (item) => item.mediaType === "IMAGE" && item.id,
   );
   state.galleryMedia = media;
+  state.photoMedia = media;
   state.galleryIndex = 0;
   gallery.replaceChildren();
 
@@ -298,9 +300,17 @@ function renderPropertyGallery(property) {
 }
 
 function openPropertyPhoto(index) {
-  if (!state.galleryMedia.length) return;
-  state.galleryIndex =
-    (index + state.galleryMedia.length) % state.galleryMedia.length;
+  openPhotoCollection(state.galleryMedia, index);
+}
+
+function openPhotoCollection(media, index = 0) {
+  const images = (media || []).filter(
+    (item) => item?.id && (!item.mediaType || item.mediaType === "IMAGE"),
+  );
+  if (!images.length) return;
+
+  state.photoMedia = images;
+  state.galleryIndex = (index + images.length) % images.length;
   renderPropertyPhotoDialog();
 
   const dialog = document.querySelector("#propertyPhotoDialog");
@@ -308,15 +318,15 @@ function openPropertyPhoto(index) {
 }
 
 function stepPropertyPhoto(direction) {
-  if (!state.galleryMedia.length) return;
+  if (!state.photoMedia.length) return;
   state.galleryIndex =
-    (state.galleryIndex + direction + state.galleryMedia.length) %
-    state.galleryMedia.length;
+    (state.galleryIndex + direction + state.photoMedia.length) %
+    state.photoMedia.length;
   renderPropertyPhotoDialog();
 }
 
 function renderPropertyPhotoDialog() {
-  const item = state.galleryMedia[state.galleryIndex];
+  const item = state.photoMedia[state.galleryIndex];
   if (!item) return;
 
   const image = document.querySelector("#photoDialogImage");
@@ -329,7 +339,7 @@ function renderPropertyPhotoDialog() {
     item.altText ||
     item.caption ||
     `${state.property?.name || "Wildleaf property"} photo ${state.galleryIndex + 1}`;
-  counter.textContent = `${state.galleryIndex + 1} / ${state.galleryMedia.length}`;
+  counter.textContent = `${state.galleryIndex + 1} / ${state.photoMedia.length}`;
   caption.textContent = item.caption || item.altText || "";
 }
 
@@ -1256,10 +1266,30 @@ function roomCategoryCard(category, options, nights) {
 }
 
 function openCategoryPhoto(category) {
-  const mediaIndex = state.galleryMedia.findIndex(
-    (item) => item.id === category.coverMediaId,
+  const roomMedia = (category.media || []).filter(
+    (item) => item?.id && item.mediaType === "IMAGE",
   );
-  openPropertyPhoto(mediaIndex >= 0 ? mediaIndex : 0);
+  if (roomMedia.length) {
+    openPhotoCollection(roomMedia, 0);
+    return;
+  }
+
+  if (category.coverMediaId) {
+    openPhotoCollection(
+      [
+        {
+          id: category.coverMediaId,
+          mediaType: "IMAGE",
+          altText: `${category.name} room photo`,
+          caption: category.name,
+        },
+      ],
+      0,
+    );
+    return;
+  }
+
+  openPropertyPhoto(0);
 }
 
 function selectRoomRate(category, option) {

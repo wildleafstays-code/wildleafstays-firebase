@@ -239,3 +239,21 @@ test("Wildleaf Match sends the guest requested room count instead of inventing e
   assert.match(propertySource, /requestedRooms,/);
   assert.match(propertySource, /!complexSearch \|\| requestedRooms > 6/);
 });
+
+
+test("homepage uses one fluid desktop search rail and a compact mobile search trigger", () => {
+  assert.match(homeHtml, /id="mobileSearchTrigger"/);
+  assert.match(homeHtml, /class="search-guest-group"/);
+  assert.match(homeHtml, /id="destinationRail"/);
+  assert.match(homeSource, /function openMobileSearch\(\)/);
+  assert.match(homeSource, /function closeMobileSearch\(\)/);
+  assert.match(homeSource, /function updateMobileSearchSummary\(\)/);
+  assert.match(homeSource, /function renderDestinations\(destinations\)/);
+});
+
+test("room category photo action uses the room's own published media collection", () => {
+  assert.match(propertySource, /category\.media \|\| \[\]/);
+  assert.match(propertySource, /function openPhotoCollection\(media, index = 0\)/);
+  assert.match(propertySource, /state\.photoMedia/);
+  assert.match(propertySource, /openPhotoCollection\(roomMedia, 0\)/);
+});
