@@ -1,5 +1,6 @@
 export const Permissions = {
   PLATFORM_MANAGE: "platform.manage",
+  HOMEPAGE_CONTENT_MANAGE: "homepage_content.manage",
   ORGANIZATION_READ: "organization.read",
   ORGANIZATION_MANAGE: "organization.manage",
   MEMBERSHIP_MANAGE: "membership.manage",
