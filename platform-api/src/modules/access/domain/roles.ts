@@ -84,7 +84,11 @@ const platformRolePermissions: Record<PlatformRole, ReadonlySet<Permission>> = {
     Permissions.OPERATIONS_READ,
     Permissions.OPERATIONS_MANAGE
   ]),
-  CONTENT_MANAGER: new Set([Permissions.PROPERTY_READ, Permissions.PROPERTY_MANAGE]),
+  CONTENT_MANAGER: new Set([
+    Permissions.PROPERTY_READ,
+    Permissions.PROPERTY_MANAGE,
+    Permissions.HOMEPAGE_CONTENT_MANAGE
+  ]),
   ANALYST: new Set([
     Permissions.ORGANIZATION_READ,
     Permissions.PROPERTY_READ,

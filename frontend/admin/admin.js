@@ -9,6 +9,7 @@ import {
 } from "./amenity-catalog.js";
 import {
   availableScreens,
+  canManageHomepageContent,
   canManagePlatformReservations,
   canReviewProperties,
   editableProperty,
@@ -57,6 +58,11 @@ const state = {
   reviewItems: [],
   reviewCursor: null,
   reviewSelection: null,
+  homepageContent: {
+    heroSlides: [],
+    destinationImages: [],
+    liveDestinations: [],
+  },
 };
 
 const byId = (id) => document.getElementById(id);
@@ -753,6 +759,7 @@ const screenCopy = {
   reservations: ["Partner operations", "Reservations"],
   calendar: ["Partner operations", "Rates and inventory"],
   control: ["Wildleaf management", "Operations control center"],
+  homepage: ["Wildleaf management", "Homepage content"],
   editor: ["Partner portal", "Hotel registration"],
   reviews: ["Wildleaf management", "Property reviews"],
 };
@@ -776,6 +783,7 @@ async function showScreen(name) {
   if (name === "reservations") await loadReservations(false);
   if (name === "calendar") await loadCalendarWorkspace();
   if (name === "control") await loadControlCenter(false);
+  if (name === "homepage") await loadHomepageContent();
   if (name === "reviews") await loadReviews(false);
 }
 
@@ -787,6 +795,7 @@ byId("refreshButton").addEventListener("click", () =>
     else if (state.screen === "reservations") await loadReservations(false);
     else if (state.screen === "calendar") await loadCalendarWorkspace();
     else if (state.screen === "control") await loadControlCenter(false);
+    else if (state.screen === "homepage") await loadHomepageContent();
     else if (state.screen === "editor" && state.property) {
       await openProperty(state.property.organizationId, state.property.id);
     } else if (state.screen === "reviews") await loadReviews(false);
@@ -4800,3 +4809,504 @@ async function refreshReviewSelection(message) {
   if (refreshed) await openReview(refreshed);
   showMessage(message);
 }
+
+
+function homepageMediaUrl(mediaId) {
+  return `/v1/public/homepage/media/${encodeURIComponent(mediaId)}`;
+}
+
+function homepageDateTimeLocal(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function homepageUtcDateTime(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Campaign date and time is invalid.");
+  }
+  return date.toISOString();
+}
+
+function homepageDestinationKey(destination) {
+  return JSON.stringify([
+    destination.city,
+    destination.stateRegion || null,
+    destination.countryCode,
+  ]);
+}
+
+function parseHomepageDestinationKey(value) {
+  const parsed = JSON.parse(value);
+  if (!Array.isArray(parsed) || parsed.length !== 3) {
+    throw new Error("Choose a valid live destination.");
+  }
+  return {
+    city: String(parsed[0] || ""),
+    stateRegion: parsed[1] ? String(parsed[1]) : null,
+    countryCode: String(parsed[2] || ""),
+  };
+}
+
+async function loadHomepageContent() {
+  if (!canManageHomepageContent(state.session)) {
+    throw new Error("Your Wildleaf role cannot manage homepage content.");
+  }
+  const data = await api("/v1/platform/homepage-content");
+  const heroSlides = data.heroSlides || [];
+  const destinationImages = data.destinationImages || [];
+
+  await Promise.all(
+    [...heroSlides, ...destinationImages].map(async (item) => {
+      try {
+        const preview = await api(
+          `/v1/platform/homepage-content/media/${item.imageId}/read-url`,
+        );
+        item.previewUrl = preview.url || "";
+      } catch {
+        item.previewUrl = "";
+      }
+    }),
+  );
+
+  state.homepageContent = {
+    heroSlides,
+    destinationImages,
+    liveDestinations: data.liveDestinations || [],
+  };
+  renderHomepageContent();
+}
+
+function renderHomepageContent() {
+  renderHomepageHeroSlides();
+  renderHomepageDestinationOptions();
+  renderHomepageDestinationImages();
+}
+
+function homepageEmpty(message) {
+  return textElement("p", "empty-state", message);
+}
+
+function renderHomepageHeroSlides() {
+  const list = byId("homepageHeroList");
+  list.replaceChildren();
+  const slides = state.homepageContent.heroSlides || [];
+  if (!slides.length) {
+    list.append(
+      homepageEmpty(
+        "No managed hero slides yet. The guest homepage will keep its existing fallback hero.",
+      ),
+    );
+    return;
+  }
+
+  for (const slide of slides) {
+    const card = document.createElement("article");
+    card.className = "homepage-content-item";
+
+    const preview = document.createElement("div");
+    preview.className = "homepage-content-preview hero-preview";
+    const image = document.createElement("img");
+    image.src = slide.previewUrl || homepageMediaUrl(slide.imageId);
+    image.alt = slide.altText || slide.headline;
+    image.loading = "lazy";
+    image.style.objectPosition = `${slide.focalXPercent}% ${slide.focalYPercent}%`;
+    preview.append(image);
+
+    const overlay = document.createElement("div");
+    overlay.className = "homepage-preview-overlay";
+    if (slide.offerLabel) {
+      overlay.append(textElement("span", "homepage-preview-offer", slide.offerLabel));
+    }
+    overlay.append(
+      textElement("strong", "", slide.headline),
+      textElement("small", "", slide.subtitle || "No subtitle"),
+    );
+    preview.append(overlay);
+
+    const status = document.createElement("div");
+    status.className = "homepage-content-status";
+    status.append(
+      textElement(
+        "span",
+        slide.enabled ? "status-pill complete" : "status-pill",
+        slide.enabled ? "Enabled" : "Hidden",
+      ),
+      textElement("small", "muted", `Order ${slide.sortOrder} · version ${slide.version}`),
+    );
+
+    const form = document.createElement("form");
+    form.className = "form-grid two-column homepage-inline-editor";
+    form.innerHTML = `
+      <label class="span-two">Headline<input name="headline" maxlength="160" required /></label>
+      <label class="span-two">Subtitle<input name="subtitle" maxlength="300" /></label>
+      <label>Offer / banner<input name="offerLabel" maxlength="80" /></label>
+      <label>Display order<input name="sortOrder" type="number" min="0" max="10000" required /></label>
+      <label>CTA text<input name="ctaLabel" maxlength="60" /></label>
+      <label>CTA link<input name="ctaHref" maxlength="500" /></label>
+      <label>Starts at<input name="startsAt" type="datetime-local" /></label>
+      <label>Ends at<input name="endsAt" type="datetime-local" /></label>
+      <label>Horizontal focal point (%)<input name="focalXPercent" type="number" min="0" max="100" required /></label>
+      <label>Vertical focal point (%)<input name="focalYPercent" type="number" min="0" max="100" required /></label>
+      <label class="span-two">Image description<input name="altText" maxlength="500" /></label>
+      <label class="check-control span-two"><input name="enabled" type="checkbox" /> Publish this slide</label>
+      <button class="span-two" type="submit">Save slide settings</button>
+    `;
+    form.elements.headline.value = slide.headline;
+    form.elements.subtitle.value = slide.subtitle || "";
+    form.elements.offerLabel.value = slide.offerLabel || "";
+    form.elements.sortOrder.value = String(slide.sortOrder);
+    form.elements.ctaLabel.value = slide.ctaLabel || "";
+    form.elements.ctaHref.value = slide.ctaHref || "";
+    form.elements.startsAt.value = homepageDateTimeLocal(slide.startsAt);
+    form.elements.endsAt.value = homepageDateTimeLocal(slide.endsAt);
+    form.elements.focalXPercent.value = String(slide.focalXPercent);
+    form.elements.focalYPercent.value = String(slide.focalYPercent);
+    form.elements.altText.value = slide.altText || "";
+    form.elements.enabled.checked = Boolean(slide.enabled);
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void run(async () => {
+        const values = Object.fromEntries(new FormData(form));
+        await idempotent(
+          `/v1/platform/homepage-content/hero-slides/${slide.id}`,
+          "PUT",
+          "homepage-hero-update",
+          {
+            headline: String(values.headline || "").trim(),
+            subtitle: String(values.subtitle || "").trim() || null,
+            offerLabel: String(values.offerLabel || "").trim() || null,
+            ctaLabel: String(values.ctaLabel || "").trim() || null,
+            ctaHref: String(values.ctaHref || "").trim() || null,
+            altText: String(values.altText || "").trim() || null,
+            focalXPercent: Number(values.focalXPercent),
+            focalYPercent: Number(values.focalYPercent),
+            sortOrder: Number(values.sortOrder),
+            enabled: form.elements.enabled.checked,
+            startsAt: homepageUtcDateTime(form.elements.startsAt.value),
+            endsAt: homepageUtcDateTime(form.elements.endsAt.value),
+            version: slide.version,
+          },
+        );
+        await loadHomepageContent();
+        showMessage("Homepage hero slide updated.");
+      });
+    });
+
+    const imageForm = document.createElement("form");
+    imageForm.className = "homepage-image-replace-form";
+    imageForm.innerHTML = `
+      <label>Replace image
+        <input name="file" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required />
+      </label>
+      <label>Image description
+        <input name="altText" maxlength="500" />
+      </label>
+      <button type="submit">Replace image</button>
+    `;
+    imageForm.elements.altText.value = slide.altText || "";
+    imageForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void run(async () => {
+        const file = imageForm.elements.file.files[0];
+        if (!file) throw new Error("Choose a hero image.");
+        if (file.size > 8 * 1024 * 1024) {
+          throw new Error("Hero images must be 8 MB or smaller.");
+        }
+        const query = new URLSearchParams({
+          version: String(slide.version),
+        });
+        const altText = imageForm.elements.altText.value.trim();
+        if (altText) query.set("altText", altText);
+        await managedUpload(
+          `/v1/platform/homepage-content/hero-slides/${slide.id}/image?${query}`,
+          file,
+          "homepage-hero-image-replace",
+        );
+        await loadHomepageContent();
+        showMessage("Homepage hero image replaced.");
+      });
+    });
+
+    const archive = button(
+      "Archive slide",
+      async () => {
+        await api(`/v1/platform/homepage-content/hero-slides/${slide.id}`, {
+          method: "DELETE",
+          body: { version: slide.version },
+          idempotencyKey: newIdempotencyKey("homepage-hero-archive"),
+        });
+        await loadHomepageContent();
+        showMessage("Homepage hero slide archived.");
+      },
+      "danger-button",
+    );
+
+    const actions = document.createElement("div");
+    actions.className = "homepage-content-actions";
+    actions.append(imageForm, archive);
+
+    card.append(preview, status, form, actions);
+    list.append(card);
+  }
+}
+
+function renderHomepageDestinationOptions() {
+  const select = byId("homepageDestinationSelect");
+  select.replaceChildren();
+
+  const configuredKeys = new Set(
+    (state.homepageContent.destinationImages || []).map((image) =>
+      homepageDestinationKey(image),
+    ),
+  );
+  const available = (state.homepageContent.liveDestinations || []).filter(
+    (destination) => !configuredKeys.has(homepageDestinationKey(destination)),
+  );
+
+  if (!available.length) {
+    const option = textElement(
+      "option",
+      "",
+      "All current live destinations already have managed images",
+    );
+    option.value = "";
+    select.append(option);
+    select.disabled = true;
+    byId("homepageDestinationForm").querySelector('button[type="submit"]').disabled = true;
+    return;
+  }
+
+  select.disabled = false;
+  byId("homepageDestinationForm").querySelector('button[type="submit"]').disabled = false;
+  const placeholder = textElement("option", "", "Choose a live destination");
+  placeholder.value = "";
+  placeholder.selected = true;
+  placeholder.disabled = true;
+  select.append(placeholder);
+
+  for (const destination of available) {
+    const option = textElement(
+      "option",
+      "",
+      `${destination.city}${destination.stateRegion ? `, ${destination.stateRegion}` : ""} · ${destination.propertyCount} ${destination.propertyCount === 1 ? "property" : "properties"}`,
+    );
+    option.value = homepageDestinationKey(destination);
+    select.append(option);
+  }
+}
+
+function renderHomepageDestinationImages() {
+  const list = byId("homepageDestinationList");
+  list.replaceChildren();
+  const images = state.homepageContent.destinationImages || [];
+  if (!images.length) {
+    list.append(
+      homepageEmpty(
+        "No destination photography has been assigned yet. Live destinations will keep the simple fallback treatment.",
+      ),
+    );
+    return;
+  }
+
+  for (const destination of images) {
+    const card = document.createElement("article");
+    card.className = "homepage-content-item destination-content-item";
+
+    const preview = document.createElement("div");
+    preview.className = "homepage-content-preview destination-preview";
+    const image = document.createElement("img");
+    image.src =
+      destination.previewUrl || homepageMediaUrl(destination.imageId);
+    image.alt =
+      destination.altText ||
+      `${destination.city}${destination.stateRegion ? `, ${destination.stateRegion}` : ""}`;
+    image.loading = "lazy";
+    preview.append(image);
+    const label = document.createElement("div");
+    label.className = "homepage-destination-preview-label";
+    label.append(
+      textElement("strong", "", destination.city),
+      textElement("small", "", destination.stateRegion || destination.countryCode),
+    );
+    preview.append(label);
+
+    const form = document.createElement("form");
+    form.className = "form-grid two-column homepage-inline-editor";
+    form.innerHTML = `
+      <label>Display order<input name="sortOrder" type="number" min="0" max="10000" required /></label>
+      <label class="check-control"><input name="enabled" type="checkbox" /> Show this image</label>
+      <label class="span-two">Image description<input name="altText" maxlength="500" /></label>
+      <button class="span-two" type="submit">Save destination settings</button>
+    `;
+    form.elements.sortOrder.value = String(destination.sortOrder);
+    form.elements.enabled.checked = Boolean(destination.enabled);
+    form.elements.altText.value = destination.altText || "";
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void run(async () => {
+        await idempotent(
+          `/v1/platform/homepage-content/destination-images/${destination.id}`,
+          "PUT",
+          "homepage-destination-update",
+          {
+            altText: form.elements.altText.value.trim() || null,
+            sortOrder: Number(form.elements.sortOrder.value),
+            enabled: form.elements.enabled.checked,
+            version: destination.version,
+          },
+        );
+        await loadHomepageContent();
+        showMessage("Destination homepage settings updated.");
+      });
+    });
+
+    const imageForm = document.createElement("form");
+    imageForm.className = "homepage-image-replace-form";
+    imageForm.innerHTML = `
+      <label>Replace image
+        <input name="file" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required />
+      </label>
+      <label>Image description
+        <input name="altText" maxlength="500" />
+      </label>
+      <button type="submit">Replace image</button>
+    `;
+    imageForm.elements.altText.value = destination.altText || "";
+    imageForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void run(async () => {
+        const file = imageForm.elements.file.files[0];
+        if (!file) throw new Error("Choose a destination image.");
+        if (file.size > 8 * 1024 * 1024) {
+          throw new Error("Destination images must be 8 MB or smaller.");
+        }
+        const query = new URLSearchParams({
+          version: String(destination.version),
+        });
+        const altText = imageForm.elements.altText.value.trim();
+        if (altText) query.set("altText", altText);
+        await managedUpload(
+          `/v1/platform/homepage-content/destination-images/${destination.id}/image?${query}`,
+          file,
+          "homepage-destination-image-replace",
+        );
+        await loadHomepageContent();
+        showMessage("Destination image replaced.");
+      });
+    });
+
+    const archive = button(
+      "Remove image",
+      async () => {
+        await api(
+          `/v1/platform/homepage-content/destination-images/${destination.id}`,
+          {
+            method: "DELETE",
+            body: { version: destination.version },
+            idempotencyKey: newIdempotencyKey("homepage-destination-archive"),
+          },
+        );
+        await loadHomepageContent();
+        showMessage("Destination image removed from homepage management.");
+      },
+      "danger-button",
+    );
+
+    const actions = document.createElement("div");
+    actions.className = "homepage-content-actions";
+    actions.append(imageForm, archive);
+
+    card.append(preview, form, actions);
+    list.append(card);
+  }
+}
+
+byId("homepageHeroCreateForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  void run(async () => {
+    const form = event.currentTarget;
+    const values = Object.fromEntries(new FormData(form));
+    const file = form.elements.file.files[0];
+    if (!file) throw new Error("Choose a hero image.");
+    if (file.size > 8 * 1024 * 1024) {
+      throw new Error("Hero images must be 8 MB or smaller.");
+    }
+
+    const query = new URLSearchParams({
+      headline: String(values.headline || "").trim(),
+      focalXPercent: String(Number(values.focalXPercent)),
+      focalYPercent: String(Number(values.focalYPercent)),
+      sortOrder: String(Number(values.sortOrder)),
+      enabled: String(form.elements.enabled.checked),
+    });
+    for (const [key, value] of [
+      ["subtitle", String(values.subtitle || "").trim()],
+      ["offerLabel", String(values.offerLabel || "").trim()],
+      ["ctaLabel", String(values.ctaLabel || "").trim()],
+      ["ctaHref", String(values.ctaHref || "").trim()],
+      ["altText", String(values.altText || "").trim()],
+      ["startsAt", homepageUtcDateTime(form.elements.startsAt.value) || ""],
+      ["endsAt", homepageUtcDateTime(form.elements.endsAt.value) || ""],
+    ]) {
+      if (value) query.set(key, value);
+    }
+
+    await managedUpload(
+      `/v1/platform/homepage-content/hero-slides?${query}`,
+      file,
+      "homepage-hero-create",
+    );
+    form.reset();
+    form.elements.focalXPercent.value = "50";
+    form.elements.focalYPercent.value = "50";
+    form.elements.sortOrder.value = "0";
+    form.elements.enabled.checked = true;
+    await loadHomepageContent();
+    showMessage("Homepage hero slide added.");
+  });
+});
+
+byId("homepageDestinationForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  void run(async () => {
+    const form = event.currentTarget;
+    const destination = parseHomepageDestinationKey(
+      form.elements.destinationKey.value,
+    );
+    const file = form.elements.file.files[0];
+    if (!file) throw new Error("Choose a destination image.");
+    if (file.size > 8 * 1024 * 1024) {
+      throw new Error("Destination images must be 8 MB or smaller.");
+    }
+
+    const query = new URLSearchParams({
+      city: destination.city,
+      countryCode: destination.countryCode,
+      sortOrder: String(Number(form.elements.sortOrder.value)),
+      enabled: String(form.elements.enabled.checked),
+    });
+    if (destination.stateRegion) {
+      query.set("stateRegion", destination.stateRegion);
+    }
+    const altText = form.elements.altText.value.trim();
+    if (altText) query.set("altText", altText);
+
+    await managedUpload(
+      `/v1/platform/homepage-content/destination-images?${query}`,
+      file,
+      "homepage-destination-create",
+    );
+    form.reset();
+    form.elements.sortOrder.value = "0";
+    form.elements.enabled.checked = true;
+    await loadHomepageContent();
+    showMessage("Destination image added to the homepage.");
+  });
+});

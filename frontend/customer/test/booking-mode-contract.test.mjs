@@ -257,3 +257,18 @@ test("room category photo action uses the room's own published media collection"
   assert.match(propertySource, /state\.photoMedia/);
   assert.match(propertySource, /openPhotoCollection\(roomMedia, 0\)/);
 });
+
+
+test("homepage supports managed hero campaigns and destination photography without changing booking search", () => {
+  assert.match(homeHtml, /id="heroImage"/);
+  assert.match(homeHtml, /id="heroOffer"/);
+  assert.match(homeHtml, /id="heroSliderControls"/);
+  assert.match(homeHtml, /id="heroDots"/);
+  assert.match(homeSource, /\/v1\/public\/homepage/);
+  assert.match(homeSource, /function renderManagedHero\(index\)/);
+  assert.match(homeSource, /function resetHeroTimer\(\)/);
+  assert.match(homeSource, /homepageMediaUrl\(destination\.imageId\)/);
+  assert.match(homeSource, /destination-card-image/);
+  assert.match(homeSource, /if \(state\.heroSlides\.length\) return;/);
+  assert.match(homeSource, /loadDestinations\(\)/);
+});

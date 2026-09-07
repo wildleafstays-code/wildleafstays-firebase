@@ -420,6 +420,50 @@ export interface PropertyMediaTable {
   updated_at: Generated<Date>;
 }
 
+export interface HomepageHeroSlidesTable {
+  id: Generated<string>;
+  headline: string;
+  subtitle: string | null;
+  offer_label: string | null;
+  cta_label: string | null;
+  cta_href: string | null;
+  storage_provider: string;
+  storage_key: string;
+  mime_type: string | null;
+  alt_text: string | null;
+  focal_x_percent: Generated<number>;
+  focal_y_percent: Generated<number>;
+  sort_order: Generated<number>;
+  enabled: Generated<boolean>;
+  starts_at: Date | null;
+  ends_at: Date | null;
+  status: Generated<string>;
+  version: Generated<number>;
+  created_by_user_id: string;
+  updated_by_user_id: string;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface HomepageDestinationImagesTable {
+  id: Generated<string>;
+  city: string;
+  state_region: string | null;
+  country_code: string;
+  storage_provider: string;
+  storage_key: string;
+  mime_type: string | null;
+  alt_text: string | null;
+  sort_order: Generated<number>;
+  enabled: Generated<boolean>;
+  status: Generated<string>;
+  version: Generated<number>;
+  created_by_user_id: string;
+  updated_by_user_id: string;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface PropertyDocumentsTable {
   id: Generated<string>;
   organization_id: string;
@@ -525,6 +569,8 @@ export interface Database {
   physical_unit_media: PhysicalUnitMediaTable;
   property_policies: PropertyPoliciesTable;
   property_media: PropertyMediaTable;
+  homepage_hero_slides: HomepageHeroSlidesTable;
+  homepage_destination_images: HomepageDestinationImagesTable;
   property_documents: PropertyDocumentsTable;
   property_review_rounds: PropertyReviewRoundsTable;
   inventory_daily_buckets: InventoryDailyBucketsTable;

@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   availableScreens,
+  canManageHomepageContent,
   canManagePlatformReservations,
   canUseControlCenter,
   canReviewProperties,
@@ -31,11 +32,20 @@ test("role-aware navigation separates hotel owners from Wildleaf reviewers", () 
     "reservations",
     "calendar",
   ]);
-  assert.deepEqual(availableScreens(reviewer), ["control", "reviews"]);
+  assert.deepEqual(availableScreens(reviewer), ["control", "homepage", "reviews"]);
   assert.equal(canReviewProperties(owner), false);
   assert.equal(canReviewProperties(reviewer), true);
   assert.equal(canUseControlCenter(reviewer), true);
   assert.equal(canManagePlatformReservations(reviewer), true);
+  assert.equal(canManageHomepageContent(reviewer), true);
+  assert.equal(
+    canManageHomepageContent({ platformRoles: ["CONTENT_MANAGER"] }),
+    true,
+  );
+  assert.equal(
+    canManageHomepageContent({ platformRoles: ["ANALYST"] }),
+    false,
+  );
   assert.equal(
     canManagePlatformReservations({ platformRoles: ["ANALYST"] }),
     false,
@@ -109,6 +119,10 @@ test("the portal uses canonical v1 APIs and never restores the legacy admin or s
   assert.match(html, /id="reservationsScreen"/);
   assert.match(html, /id="calendarScreen"/);
   assert.match(html, /id="controlScreen"/);
+  assert.match(html, /id="homepageScreen"/);
+  assert.match(source, /\/v1\/platform\/homepage-content/);
+  assert.match(source, /homepage-hero-create/);
+  assert.match(source, /homepage-destination-create/);
   assert.doesNotMatch(combined, /\/api\/admin\//);
   assert.doesNotMatch(combined, /firebase\.storage|storageKey\s*:/);
   assert.doesNotMatch(

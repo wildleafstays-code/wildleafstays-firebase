@@ -13,6 +13,7 @@ import { UnavailablePropertyAssetStorage } from "./infrastructure/storage/unavai
 import { AccessRepository } from "./modules/access/infrastructure/access-repository.js";
 import { registerAuditRoutes } from "./modules/audit/transport/audit-routes.js";
 import { registerGuestSelfServiceRoutes } from "./modules/guest/transport/guest-self-service-routes.js";
+import { registerHomepageContentRoutes } from "./modules/homepage-content/transport/homepage-content-routes.js";
 import { registerCommercialRuleRoutes } from "./modules/commercial/transport/commercial-rule-routes.js";
 import { registerPromotionRuleRoutes } from "./modules/commercial/transport/promotion-rule-routes.js";
 import { UserRepository } from "./modules/identity/infrastructure/user-repository.js";
@@ -191,6 +192,14 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     identityVerifier: deps.identityVerifier,
     userRepository,
     accessRepository
+  });
+
+  await registerHomepageContentRoutes(app, {
+    db: deps.db,
+    identityVerifier: deps.identityVerifier,
+    userRepository,
+    accessRepository,
+    propertyAssetStorage: deps.propertyAssetStorage ?? new UnavailablePropertyAssetStorage()
   });
 
   await registerGuestSelfServiceRoutes(app, {

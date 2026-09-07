@@ -46,12 +46,25 @@
 
     <main>
       <section class="home-hero">
+        <div id="heroMedia" class="hero-media" aria-hidden="true">
+          <img id="heroImage" alt="" />
+        </div>
+        <div class="hero-shade" aria-hidden="true"></div>
+
         <div class="hero-content">
-          <p class="eyebrow">Thoughtful stays, naturally</p>
-          <h1>Find a stay that feels right.</h1>
-          <p class="hero-copy">
+          <p id="heroOffer" class="hero-offer hidden"></p>
+          <p id="heroEyebrow" class="eyebrow">Thoughtful stays, naturally</p>
+          <h1 id="heroHeadline">Find a stay that feels right.</h1>
+          <p id="heroSubtitle" class="hero-copy">
             Handpicked hotels and private villas with live availability and secure booking.
           </p>
+          <a id="heroCta" class="hero-cta hidden" href="#stays">Explore stays</a>
+        </div>
+
+        <div id="heroSliderControls" class="hero-slider-controls hidden" aria-label="Homepage highlights">
+          <button id="heroPrevious" type="button" aria-label="Previous highlight">‹</button>
+          <div id="heroDots" class="hero-dots" role="tablist" aria-label="Choose highlight"></div>
+          <button id="heroNext" type="button" aria-label="Next highlight">›</button>
         </div>
 
         <button
