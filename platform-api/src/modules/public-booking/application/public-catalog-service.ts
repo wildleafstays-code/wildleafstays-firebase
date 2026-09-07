@@ -8,6 +8,7 @@ import type {
   PublicPoliciesView,
   PublicPropertyDetailView,
   PublicPropertySummaryView,
+  PublicRoomCategoryMediaView,
   PublicRoomCategoryView
 } from "../domain/public-catalog.js";
 import {
@@ -73,16 +74,26 @@ export class PublicCatalogService {
       this.repository.listMedia(db, record.organization_id, record.id)
     ]);
 
-    const categoryCoverIds = new Map<string, string>();
+    const categoryMedia = new Map<string, PublicRoomCategoryMediaView[]>();
     for (const media of roomMediaRows) {
-      if (!categoryCoverIds.has(media.room_category_id)) {
-        categoryCoverIds.set(media.room_category_id, media.id);
-      }
+      const items = categoryMedia.get(media.room_category_id) ?? [];
+      items.push({
+        id: media.id,
+        mediaType: "IMAGE",
+        mimeType: media.mime_type,
+        altText: media.alt_text,
+        caption: media.caption,
+        sortOrder: media.sort_order
+      });
+      categoryMedia.set(media.room_category_id, items);
     }
 
-    const roomCategories: PublicRoomCategoryView[] = roomRows.map((row) => ({
+    const roomCategories: PublicRoomCategoryView[] = roomRows.map((row) => {
+      const media = categoryMedia.get(row.id) ?? [];
+      return {
       roomCategoryId: row.id,
-      coverMediaId: categoryCoverIds.get(row.id) ?? null,
+      coverMediaId: media[0]?.id ?? null,
+      media,
       code: row.code,
       name: row.name,
       accommodationType: row.accommodation_type,
@@ -95,7 +106,8 @@ export class PublicCatalogService {
       bedConfiguration: row.bed_configuration,
       extraBedAllowed: row.extra_bed_allowed,
       defaultViewLabel: row.default_view_label
-    }));
+      };
+    });
 
     const amenities: PublicAmenityView[] = amenityRows.map((row) => ({
       code: row.code,
