@@ -66,13 +66,15 @@ export class PublicCatalogService {
       throw new NotFoundError("Public property not found");
     }
 
-    const [roomRows, roomMediaRows, amenityRows, policyRow, mediaRows] = await Promise.all([
-      this.repository.listRoomCategories(db, record.organization_id, record.id),
-      this.repository.listRoomCategoryMedia(db, record.organization_id, record.id),
-      this.repository.listAmenities(db, record.organization_id, record.id),
-      this.repository.getPolicies(db, record.organization_id, record.id),
-      this.repository.listMedia(db, record.organization_id, record.id)
-    ]);
+    const [roomRows, roomMediaRows, physicalRoomMediaRows, amenityRows, policyRow, mediaRows] =
+      await Promise.all([
+        this.repository.listRoomCategories(db, record.organization_id, record.id),
+        this.repository.listRoomCategoryMedia(db, record.organization_id, record.id),
+        this.repository.listPhysicalUnitMedia(db, record.organization_id, record.id),
+        this.repository.listAmenities(db, record.organization_id, record.id),
+        this.repository.getPolicies(db, record.organization_id, record.id),
+        this.repository.listMedia(db, record.organization_id, record.id)
+      ]);
 
     const categoryMedia = new Map<string, PublicRoomCategoryMediaView[]>();
     for (const media of roomMediaRows) {
@@ -88,8 +90,26 @@ export class PublicCatalogService {
       categoryMedia.set(media.room_category_id, items);
     }
 
+    const physicalCategoryMedia = new Map<string, PublicRoomCategoryMediaView[]>();
+    for (const media of physicalRoomMediaRows) {
+      const items = physicalCategoryMedia.get(media.room_category_id) ?? [];
+      items.push({
+        id: media.id,
+        mediaType: "IMAGE",
+        mimeType: media.mime_type,
+        altText: media.alt_text,
+        caption: media.caption,
+        sortOrder: media.sort_order
+      });
+      physicalCategoryMedia.set(media.room_category_id, items);
+    }
+
     const roomCategories: PublicRoomCategoryView[] = roomRows.map((row) => {
-      const media = categoryMedia.get(row.id) ?? [];
+      const explicitCategoryMedia = categoryMedia.get(row.id) ?? [];
+      const media =
+        explicitCategoryMedia.length > 0
+          ? explicitCategoryMedia
+          : (physicalCategoryMedia.get(row.id) ?? []);
       return {
         roomCategoryId: row.id,
         coverMediaId: media[0]?.id ?? null,
