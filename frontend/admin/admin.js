@@ -4857,9 +4857,25 @@ async function loadHomepageContent() {
     throw new Error("Your Wildleaf role cannot manage homepage content.");
   }
   const data = await api("/v1/platform/homepage-content");
+  const heroSlides = data.heroSlides || [];
+  const destinationImages = data.destinationImages || [];
+
+  await Promise.all(
+    [...heroSlides, ...destinationImages].map(async (item) => {
+      try {
+        const preview = await api(
+          `/v1/platform/homepage-content/media/${item.imageId}/read-url`,
+        );
+        item.previewUrl = preview.url || "";
+      } catch {
+        item.previewUrl = "";
+      }
+    }),
+  );
+
   state.homepageContent = {
-    heroSlides: data.heroSlides || [],
-    destinationImages: data.destinationImages || [],
+    heroSlides,
+    destinationImages,
     liveDestinations: data.liveDestinations || [],
   };
   renderHomepageContent();
@@ -4895,7 +4911,7 @@ function renderHomepageHeroSlides() {
     const preview = document.createElement("div");
     preview.className = "homepage-content-preview hero-preview";
     const image = document.createElement("img");
-    image.src = homepageMediaUrl(slide.imageId);
+    image.src = slide.previewUrl || homepageMediaUrl(slide.imageId);
     image.alt = slide.altText || slide.headline;
     image.loading = "lazy";
     image.style.objectPosition = `${slide.focalXPercent}% ${slide.focalYPercent}%`;
@@ -5105,7 +5121,8 @@ function renderHomepageDestinationImages() {
     const preview = document.createElement("div");
     preview.className = "homepage-content-preview destination-preview";
     const image = document.createElement("img");
-    image.src = homepageMediaUrl(destination.imageId);
+    image.src =
+      destination.previewUrl || homepageMediaUrl(destination.imageId);
     image.alt =
       destination.altText ||
       `${destination.city}${destination.stateRegion ? `, ${destination.stateRegion}` : ""}`;
