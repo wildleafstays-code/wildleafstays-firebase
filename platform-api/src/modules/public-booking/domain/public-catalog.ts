@@ -21,7 +21,7 @@ export interface PublicPropertySummaryView {
 export interface PublicRoomCategoryView {
   roomCategoryId: string;
   coverMediaId: string | null;
-  media: PublicRoomCategoryMediaView[];
+  media?: PublicRoomCategoryMediaView[];
   code: string;
   name: string;
   accommodationType: string;
