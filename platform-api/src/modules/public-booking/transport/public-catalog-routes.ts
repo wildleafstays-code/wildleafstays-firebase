@@ -114,12 +114,27 @@ const propertySummarySchema = {
   }
 } as const;
 
+const roomCategoryMediaSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["id", "mediaType", "mimeType", "altText", "caption", "sortOrder"],
+  properties: {
+    id: { type: "string", format: "uuid" },
+    mediaType: { type: "string", const: "IMAGE" },
+    mimeType: nullableString,
+    altText: nullableString,
+    caption: nullableString,
+    sortOrder: { type: "integer" }
+  }
+} as const;
+
 const roomCategorySchema = {
   type: "object",
   additionalProperties: false,
   required: [
     "roomCategoryId",
     "coverMediaId",
+    "media",
     "code",
     "name",
     "accommodationType",
@@ -136,6 +151,7 @@ const roomCategorySchema = {
   properties: {
     roomCategoryId: { type: "string", format: "uuid" },
     coverMediaId: nullableUuid,
+    media: { type: "array", items: roomCategoryMediaSchema },
     code: { type: "string" },
     name: { type: "string" },
     accommodationType: { type: "string" },
