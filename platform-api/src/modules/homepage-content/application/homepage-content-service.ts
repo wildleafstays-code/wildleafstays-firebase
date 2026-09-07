@@ -215,7 +215,7 @@ function liveDestinationView(
 }
 
 function auditView(value: HomepageHeroSlideAdminView | HomepageDestinationImageAdminView): JsonObject {
-  return { ...value };
+  return { ...value } as JsonObject;
 }
 
 function destinationKey(
@@ -298,30 +298,44 @@ export class HomepageContentService {
         ])
     );
 
-    const destinations: PublicHomepageDestinationView[] = liveDestinationRows
-      .map((row) => {
-        const image = configured.get(
-          destinationKey(row.city, row.state_region, row.country_code)
-        );
-        return {
-          city: row.city,
-          stateRegion: row.state_region,
-          countryCode: row.country_code,
-          propertyCount: row.property_count,
-          imageId: image?.id ?? null,
-          altText: image?.alt_text ?? null,
-          sortOrder: image?.sort_order ?? 10000
-        };
-      })
-      .sort(
-        (left, right) =>
-          left.sortOrder - right.sortOrder ||
-          right.propertyCount - left.propertyCount ||
-          left.city.localeCompare(right.city)
-      )
-      .map(({ sortOrder: _sortOrder, ...destination }) => destination);
+    const destinationsWithOrder = liveDestinationRows.map((row) => {
+      const image = configured.get(
+        destinationKey(row.city, row.state_region, row.country_code)
+      );
+      return {
+        city: row.city,
+        stateRegion: row.state_region,
+        countryCode: row.country_code,
+        propertyCount: row.property_count,
+        imageId: image?.id ?? null,
+        altText: image?.alt_text ?? null,
+        sortOrder: image?.sort_order ?? 10000
+      };
+    });
+
+    destinationsWithOrder.sort(
+      (left, right) =>
+        left.sortOrder - right.sortOrder ||
+        right.propertyCount - left.propertyCount ||
+        left.city.localeCompare(right.city)
+    );
+
+    const destinations: PublicHomepageDestinationView[] = destinationsWithOrder.map(
+      ({ sortOrder: _sortOrder, ...destination }) => destination
+    );
 
     return { heroSlides, destinations };
+  }
+
+  async getAdminMediaStorage(
+    db: Kysely<Database>,
+    actor: ActorContext,
+    mediaId: string
+  ): Promise<string> {
+    this.assertManage(actor);
+    const media = await this.repository.findAdminMediaStorage(db, mediaId);
+    if (!media) throw new NotFoundError("Homepage image not found");
+    return media.storage_key;
   }
 
   async getPublicMediaStorage(
@@ -435,6 +449,9 @@ export class HomepageContentService {
     request: RequestMetadata
   ): Promise<{ archived: true }> {
     this.assertManage(actor);
+    if (!Number.isInteger(version) || version < 1) {
+      throw new ValidationError("Hero slide version must be a positive whole number");
+    }
     const before = await this.repository.findHeroSlide(trx, id);
     if (!before) throw new NotFoundError("Homepage hero slide not found");
     const row = await this.repository.archiveHeroSlide(trx, actor.userId, id, version);
@@ -592,6 +609,9 @@ export class HomepageContentService {
     request: RequestMetadata
   ): Promise<{ archived: true }> {
     this.assertManage(actor);
+    if (!Number.isInteger(version) || version < 1) {
+      throw new ValidationError("Destination image version must be a positive whole number");
+    }
     const before = await this.repository.findDestinationImage(trx, id);
     if (!before) throw new NotFoundError("Homepage destination image not found");
     const row = await this.repository.archiveDestinationImage(
