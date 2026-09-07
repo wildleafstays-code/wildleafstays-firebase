@@ -81,6 +81,15 @@ export interface PublicRoomCategoryMediaRecord {
   sort_order: number;
 }
 
+export interface PublicPhysicalUnitMediaRecord {
+  id: string;
+  room_category_id: string;
+  mime_type: string | null;
+  alt_text: string | null;
+  caption: string | null;
+  sort_order: number;
+}
+
 export interface PublicMediaStorageRecord {
   storage_key: string;
 }
@@ -249,6 +258,35 @@ export class PublicCatalogRepository {
       .execute();
   }
 
+  async listPhysicalUnitMedia(
+    db: DbExecutor,
+    organizationId: string,
+    propertyId: string
+  ): Promise<PublicPhysicalUnitMediaRecord[]> {
+    return db
+      .selectFrom("physical_unit_media as media")
+      .innerJoin("physical_units as unit", "unit.id", "media.physical_unit_id")
+      .innerJoin("room_categories as category", "category.id", "unit.room_category_id")
+      .select([
+        "media.id as id",
+        "unit.room_category_id as room_category_id",
+        "media.mime_type as mime_type",
+        "media.alt_text as alt_text",
+        "media.caption as caption",
+        "media.sort_order as sort_order"
+      ])
+      .where("media.organization_id", "=", organizationId)
+      .where("media.property_id", "=", propertyId)
+      .where("media.status", "=", "ACTIVE")
+      .where("unit.status", "=", "ACTIVE")
+      .where("category.status", "=", "ACTIVE")
+      .orderBy("unit.room_category_id")
+      .orderBy("unit.sort_order")
+      .orderBy("media.sort_order")
+      .orderBy("media.created_at")
+      .execute();
+  }
+
   async findPublicMediaStorage(
     db: DbExecutor,
     publicSlug: string,
@@ -266,7 +304,7 @@ export class PublicCatalogRepository {
       .executeTakeFirst();
     if (propertyMedia) return propertyMedia;
 
-    return db
+    const roomCategoryMedia = await db
       .selectFrom("room_category_media as media")
       .innerJoin("properties as property", "property.id", "media.property_id")
       .innerJoin("room_categories as category", "category.id", "media.room_category_id")
@@ -274,6 +312,21 @@ export class PublicCatalogRepository {
       .where("property.status", "=", "LIVE")
       .where("property.public_slug", "=", publicSlug)
       .where("category.status", "=", "ACTIVE")
+      .where("media.id", "=", mediaId)
+      .where("media.status", "=", "ACTIVE")
+      .executeTakeFirst();
+    if (roomCategoryMedia) return roomCategoryMedia;
+
+    return db
+      .selectFrom("physical_unit_media as media")
+      .innerJoin("physical_units as unit", "unit.id", "media.physical_unit_id")
+      .innerJoin("room_categories as category", "category.id", "unit.room_category_id")
+      .innerJoin("properties as property", "property.id", "media.property_id")
+      .select("media.storage_key as storage_key")
+      .where("property.status", "=", "LIVE")
+      .where("property.public_slug", "=", publicSlug)
+      .where("category.status", "=", "ACTIVE")
+      .where("unit.status", "=", "ACTIVE")
       .where("media.id", "=", mediaId)
       .where("media.status", "=", "ACTIVE")
       .executeTakeFirst();

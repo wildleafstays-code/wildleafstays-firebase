@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { loadConfig } from "../src/config/env.js";
 import { createDatabase } from "../src/infrastructure/database/database.js";
+import type { PropertyAssetStorage } from "../src/infrastructure/storage/property-asset-storage.js";
 import { registerPublicCatalogRoutes } from "../src/modules/public-booking/transport/public-catalog-routes.js";
 import { registerErrorHandler } from "../src/shared/http/error-handler.js";
 
@@ -17,12 +18,18 @@ interface Fixture {
   city: string;
   otherCity: string;
   activeRoomCategoryId: string;
+  fallbackRoomCategoryId: string;
   retiredRoomCategoryId: string;
   amenityCode: string;
   activeMediaId: string;
   archivedMediaId: string;
   activeRoomMediaId: string;
   archivedRoomMediaId: string;
+  fallbackPhysicalMediaId: string;
+  archivedPhysicalMediaId: string;
+  retiredPhysicalMediaId: string;
+  ignoredPhysicalMediaId: string;
+  privatePhysicalStorageKey: string;
   privateEmail: string;
   privatePhone: string;
   privateAddress: string;
@@ -31,6 +38,17 @@ interface Fixture {
 
 let app: FastifyInstance;
 let fixture: Fixture;
+const signedReadKeys: string[] = [];
+
+const propertyAssetStorage: PropertyAssetStorage = {
+  async store() {
+    throw new Error("Public catalog tests do not store files");
+  },
+  async createReadUrl(objectKey) {
+    signedReadKeys.push(objectKey);
+    return `https://storage.example.test/${encodeURIComponent(objectKey)}`;
+  }
+};
 
 async function createFixture(): Promise<Fixture> {
   const suffix = randomUUID().replaceAll("-", "").slice(0, 10);
@@ -39,11 +57,19 @@ async function createFixture(): Promise<Fixture> {
   const draftPropertyId = randomUUID();
   const otherLivePropertyId = randomUUID();
   const activeRoomCategoryId = randomUUID();
+  const fallbackRoomCategoryId = randomUUID();
   const retiredRoomCategoryId = randomUUID();
+  const activePhysicalUnitId = randomUUID();
+  const fallbackPhysicalUnitId = randomUUID();
+  const retiredPhysicalUnitId = randomUUID();
   const activeMediaId = randomUUID();
   const archivedMediaId = randomUUID();
   const activeRoomMediaId = randomUUID();
   const archivedRoomMediaId = randomUUID();
+  const fallbackPhysicalMediaId = randomUUID();
+  const archivedPhysicalMediaId = randomUUID();
+  const retiredPhysicalMediaId = randomUUID();
+  const ignoredPhysicalMediaId = randomUUID();
   const publicSlug = `wildleaf-catalog-${suffix}`;
   const draftSlug = `draft-${suffix}`;
   const city = `Catalog City ${suffix}`;
@@ -53,6 +79,7 @@ async function createFixture(): Promise<Fixture> {
   const privatePhone = `+9199${suffix.slice(0, 8)}`;
   const privateAddress = `Private Street ${suffix}`;
   const privateStorageKey = `private/catalog/${suffix}/cover.jpg`;
+  const privatePhysicalStorageKey = `private/catalog/${suffix}/physical-fallback.webp`;
 
   await db
     .insertInto("organizations")
@@ -159,6 +186,25 @@ async function createFixture(): Promise<Fixture> {
         status: "ACTIVE"
       },
       {
+        id: fallbackRoomCategoryId,
+        organization_id: organizationId,
+        property_id: livePropertyId,
+        code: `FALLBACK_${suffix.toUpperCase()}`,
+        name: "Garden Room",
+        accommodation_type: "ROOM",
+        description: "Uses active physical room photos as its public fallback",
+        base_occupancy: 2,
+        max_adults: 2,
+        max_children: 1,
+        max_occupancy: 3,
+        size_sqm: "24.00",
+        bed_configuration: "1 King Bed",
+        extra_bed_allowed: false,
+        default_view_label: "Garden View",
+        sort_order: 2,
+        status: "ACTIVE"
+      },
+      {
         id: retiredRoomCategoryId,
         organization_id: organizationId,
         property_id: livePropertyId,
@@ -174,6 +220,42 @@ async function createFixture(): Promise<Fixture> {
         bed_configuration: "1 Queen Bed",
         extra_bed_allowed: false,
         default_view_label: null,
+        sort_order: 3,
+        status: "RETIRED"
+      }
+    ])
+    .execute();
+
+  await db
+    .insertInto("physical_units")
+    .values([
+      {
+        id: activePhysicalUnitId,
+        organization_id: organizationId,
+        property_id: livePropertyId,
+        room_category_id: activeRoomCategoryId,
+        unit_code: `EXPLICIT-${suffix}`,
+        display_name: "Explicit category room",
+        sort_order: 1,
+        status: "ACTIVE"
+      },
+      {
+        id: fallbackPhysicalUnitId,
+        organization_id: organizationId,
+        property_id: livePropertyId,
+        room_category_id: fallbackRoomCategoryId,
+        unit_code: `FALLBACK-${suffix}`,
+        display_name: "Garden Room 101",
+        sort_order: 1,
+        status: "ACTIVE"
+      },
+      {
+        id: retiredPhysicalUnitId,
+        organization_id: organizationId,
+        property_id: livePropertyId,
+        room_category_id: fallbackRoomCategoryId,
+        unit_code: `RETIRED-${suffix}`,
+        display_name: "Retired Garden Room",
         sort_order: 2,
         status: "RETIRED"
       }
@@ -287,6 +369,68 @@ async function createFixture(): Promise<Fixture> {
     ])
     .execute();
 
+  await db
+    .insertInto("physical_unit_media")
+    .values([
+      {
+        id: ignoredPhysicalMediaId,
+        organization_id: organizationId,
+        property_id: livePropertyId,
+        physical_unit_id: activePhysicalUnitId,
+        storage_provider: "OTHER",
+        storage_key: `private/catalog/${suffix}/explicit-physical.webp`,
+        mime_type: "image/webp",
+        alt_text: "Physical photo hidden by explicit category media",
+        caption: "Explicit category keeps priority",
+        sort_order: 1,
+        status: "ACTIVE",
+        created_by_user_id: null
+      },
+      {
+        id: fallbackPhysicalMediaId,
+        organization_id: organizationId,
+        property_id: livePropertyId,
+        physical_unit_id: fallbackPhysicalUnitId,
+        storage_provider: "OTHER",
+        storage_key: privatePhysicalStorageKey,
+        mime_type: "image/webp",
+        alt_text: "Garden Room bedroom",
+        caption: "Garden Room",
+        sort_order: 1,
+        status: "ACTIVE",
+        created_by_user_id: null
+      },
+      {
+        id: archivedPhysicalMediaId,
+        organization_id: organizationId,
+        property_id: livePropertyId,
+        physical_unit_id: fallbackPhysicalUnitId,
+        storage_provider: "OTHER",
+        storage_key: `private/catalog/${suffix}/physical-archived.webp`,
+        mime_type: "image/webp",
+        alt_text: "Archived physical room image",
+        caption: "Must not be public",
+        sort_order: 2,
+        status: "ARCHIVED",
+        created_by_user_id: null
+      },
+      {
+        id: retiredPhysicalMediaId,
+        organization_id: organizationId,
+        property_id: livePropertyId,
+        physical_unit_id: retiredPhysicalUnitId,
+        storage_provider: "OTHER",
+        storage_key: `private/catalog/${suffix}/retired-unit.webp`,
+        mime_type: "image/webp",
+        alt_text: "Retired physical room image",
+        caption: "Must not be public",
+        sort_order: 1,
+        status: "ACTIVE",
+        created_by_user_id: null
+      }
+    ])
+    .execute();
+
   return {
     organizationId,
     draftPropertyId,
@@ -295,12 +439,18 @@ async function createFixture(): Promise<Fixture> {
     city,
     otherCity,
     activeRoomCategoryId,
+    fallbackRoomCategoryId,
     retiredRoomCategoryId,
     amenityCode,
     activeMediaId,
     archivedMediaId,
     activeRoomMediaId,
     archivedRoomMediaId,
+    fallbackPhysicalMediaId,
+    archivedPhysicalMediaId,
+    retiredPhysicalMediaId,
+    ignoredPhysicalMediaId,
+    privatePhysicalStorageKey,
     privateEmail,
     privatePhone,
     privateAddress,
@@ -345,7 +495,7 @@ beforeAll(async () => {
   fixture = await createFixture();
   app = Fastify({ logger: false });
   registerErrorHandler(app);
-  await registerPublicCatalogRoutes(app, { db });
+  await registerPublicCatalogRoutes(app, { db, propertyAssetStorage });
 });
 
 afterAll(async () => {
@@ -471,6 +621,32 @@ describe("Phase 6A public property catalog", () => {
     expect(activeRoom?.media).not.toContainEqual(
       expect.objectContaining({ id: fixture.archivedRoomMediaId })
     );
+    expect(activeRoom?.media).not.toContainEqual(
+      expect.objectContaining({ id: fixture.ignoredPhysicalMediaId })
+    );
+
+    const fallbackRoom = body.property.roomCategories.find(
+      (category) => category.roomCategoryId === fixture.fallbackRoomCategoryId
+    );
+    expect(fallbackRoom).toMatchObject({
+      coverMediaId: fixture.fallbackPhysicalMediaId,
+      media: [
+        {
+          id: fixture.fallbackPhysicalMediaId,
+          mediaType: "IMAGE",
+          mimeType: "image/webp",
+          altText: "Garden Room bedroom",
+          caption: "Garden Room",
+          sortOrder: 1
+        }
+      ]
+    });
+    expect(fallbackRoom?.media).not.toContainEqual(
+      expect.objectContaining({ id: fixture.archivedPhysicalMediaId })
+    );
+    expect(fallbackRoom?.media).not.toContainEqual(
+      expect.objectContaining({ id: fixture.retiredPhysicalMediaId })
+    );
     expect(body.property.amenities).toContainEqual(
       expect.objectContaining({ code: fixture.amenityCode })
     );
@@ -498,6 +674,30 @@ describe("Phase 6A public property catalog", () => {
     expect(serialized).not.toContain(fixture.privatePhone);
     expect(serialized).not.toContain(fixture.privateAddress);
     expect(serialized).not.toContain(fixture.privateStorageKey);
+    expect(serialized).not.toContain(fixture.privatePhysicalStorageKey);
+  });
+
+  it("opens active physical room fallback media but rejects archived or retired-room media", async () => {
+    signedReadKeys.length = 0;
+
+    const active = await app.inject({
+      method: "GET",
+      url: `/v1/public/properties/${fixture.publicSlug}/media/${fixture.fallbackPhysicalMediaId}`
+    });
+
+    expect(active.statusCode).toBe(302);
+    expect(active.headers.location).toBe(
+      `https://storage.example.test/${encodeURIComponent(fixture.privatePhysicalStorageKey)}`
+    );
+    expect(signedReadKeys).toEqual([fixture.privatePhysicalStorageKey]);
+
+    for (const mediaId of [fixture.archivedPhysicalMediaId, fixture.retiredPhysicalMediaId]) {
+      const response = await app.inject({
+        method: "GET",
+        url: `/v1/public/properties/${fixture.publicSlug}/media/${mediaId}`
+      });
+      expect(response.statusCode).toBe(404);
+    }
   });
 
   it("returns 404 for an unknown or non-live public slug", async () => {
