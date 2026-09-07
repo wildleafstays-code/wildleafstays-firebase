@@ -170,17 +170,17 @@ describe("homepage content manager", () => {
     expect(serialized).not.toContain("storageKey");
     expect(serialized).not.toContain("private-homepage-test");
 
-    await expect(
-      service.getPublicMediaStorage(db, future.heroSlide.id, now)
-    ).rejects.toMatchObject({ code: "NOT_FOUND", statusCode: 404 });
+    await expect(service.getPublicMediaStorage(db, future.heroSlide.id, now)).rejects.toMatchObject(
+      { code: "NOT_FOUND", statusCode: 404 }
+    );
 
     await expect(
       service.getAdminMediaStorage(db, analyst, future.heroSlide.id)
     ).rejects.toMatchObject({ code: "ACCESS_DENIED", statusCode: 403 });
 
-    await expect(
-      service.getAdminMediaStorage(db, manager, future.heroSlide.id)
-    ).resolves.toBe(futureStorageKey);
+    await expect(service.getAdminMediaStorage(db, manager, future.heroSlide.id)).resolves.toBe(
+      futureStorageKey
+    );
   });
 
   it("uses real live destination counts, supports destination photography, and enforces optimistic versions", async () => {
@@ -264,27 +264,19 @@ describe("homepage content manager", () => {
       version: hero.heroSlide.version
     };
 
-    const updated = await db.transaction().execute((trx) =>
-      service.updateHeroSlide(
-        trx,
-        manager,
-        hero.heroSlide.id,
-        update,
-        requestMetadata()
-      )
-    );
+    const updated = await db
+      .transaction()
+      .execute((trx) =>
+        service.updateHeroSlide(trx, manager, hero.heroSlide.id, update, requestMetadata())
+      );
     expect(updated.heroSlide.version).toBe(hero.heroSlide.version + 1);
 
     await expect(
-      db.transaction().execute((trx) =>
-        service.updateHeroSlide(
-          trx,
-          manager,
-          hero.heroSlide.id,
-          update,
-          requestMetadata()
+      db
+        .transaction()
+        .execute((trx) =>
+          service.updateHeroSlide(trx, manager, hero.heroSlide.id, update, requestMetadata())
         )
-      )
     ).rejects.toMatchObject({ code: "CONFLICT", statusCode: 409 });
 
     const audit = await db

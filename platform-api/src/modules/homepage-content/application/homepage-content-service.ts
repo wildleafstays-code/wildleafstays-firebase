@@ -4,11 +4,7 @@ import type { ActorContext } from "../../access/domain/actor-context.js";
 import { AuthorizationService } from "../../access/domain/authorization-service.js";
 import { Permissions } from "../../access/domain/permissions.js";
 import { AuditService } from "../../../shared/audit/audit-service.js";
-import {
-  ConflictError,
-  NotFoundError,
-  ValidationError
-} from "../../../shared/errors/app-error.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../../shared/errors/app-error.js";
 import type { RequestMetadata } from "../../../shared/http/request-metadata.js";
 import type {
   CreateDestinationImageInput,
@@ -56,16 +52,9 @@ function optionalText(
   return normalized;
 }
 
-function integerInRange(
-  value: number,
-  label: string,
-  minimum: number,
-  maximum: number
-): number {
+function integerInRange(value: number, label: string, minimum: number, maximum: number): number {
   if (!Number.isInteger(value) || value < minimum || value > maximum) {
-    throw new ValidationError(
-      `${label} must be a whole number between ${minimum} and ${maximum}`
-    );
+    throw new ValidationError(`${label} must be a whole number between ${minimum} and ${maximum}`);
   }
   return value;
 }
@@ -85,7 +74,9 @@ function normalizedCta(
   const ctaLabel = optionalText(labelValue, "CTA label", 60);
   const ctaHref = optionalText(hrefValue, "CTA link", 500);
   if ((ctaLabel === null) !== (ctaHref === null)) {
-    throw new ValidationError("CTA label and CTA link must either both be supplied or both be blank");
+    throw new ValidationError(
+      "CTA label and CTA link must either both be supplied or both be blank"
+    );
   }
   if (
     ctaHref &&
@@ -203,9 +194,7 @@ function destinationAdminView(
   };
 }
 
-function liveDestinationView(
-  row: HomepageLiveDestinationRecord
-): HomepageLiveDestinationView {
+function liveDestinationView(row: HomepageLiveDestinationRecord): HomepageLiveDestinationView {
   return {
     city: row.city,
     stateRegion: row.state_region,
@@ -214,15 +203,13 @@ function liveDestinationView(
   };
 }
 
-function auditView(value: HomepageHeroSlideAdminView | HomepageDestinationImageAdminView): JsonObject {
+function auditView(
+  value: HomepageHeroSlideAdminView | HomepageDestinationImageAdminView
+): JsonObject {
   return { ...value } as JsonObject;
 }
 
-function destinationKey(
-  city: string,
-  stateRegion: string | null,
-  countryCode: string
-): string {
+function destinationKey(city: string, stateRegion: string | null, countryCode: string): string {
   return [
     city.trim().toLocaleLowerCase("en"),
     (stateRegion ?? "").trim().toLocaleLowerCase("en"),
@@ -292,16 +279,11 @@ export class HomepageContentService {
     const configured = new Map(
       destinationRows
         .filter((row) => row.enabled)
-        .map((row) => [
-          destinationKey(row.city, row.state_region, row.country_code),
-          row
-        ])
+        .map((row) => [destinationKey(row.city, row.state_region, row.country_code), row])
     );
 
     const destinationsWithOrder = liveDestinationRows.map((row) => {
-      const image = configured.get(
-        destinationKey(row.city, row.state_region, row.country_code)
-      );
+      const image = configured.get(destinationKey(row.city, row.state_region, row.country_code));
       return {
         city: row.city,
         stateRegion: row.state_region,
@@ -482,16 +464,8 @@ export class HomepageContentService {
     const liveDestinations = await this.repository.listLiveDestinations(trx);
     const matchesLiveDestination = liveDestinations.some(
       (destination) =>
-        destinationKey(
-          destination.city,
-          destination.state_region,
-          destination.country_code
-        ) ===
-        destinationKey(
-          normalized.city,
-          normalized.stateRegion,
-          normalized.countryCode
-        )
+        destinationKey(destination.city, destination.state_region, destination.country_code) ===
+        destinationKey(normalized.city, normalized.stateRegion, normalized.countryCode)
     );
     if (!matchesLiveDestination) {
       throw new ValidationError("Destination image must match a destination with a live property");
@@ -507,12 +481,7 @@ export class HomepageContentService {
       throw new ConflictError("This destination already has a managed homepage image");
     }
 
-    const row = await this.repository.createDestinationImage(
-      trx,
-      actor.userId,
-      normalized,
-      image
-    );
+    const row = await this.repository.createDestinationImage(trx, actor.userId, normalized, image);
     const view = destinationAdminView(row);
     await new AuditService(trx).record({
       actor,
@@ -537,12 +506,7 @@ export class HomepageContentService {
     const before = await this.repository.findDestinationImage(trx, id);
     if (!before) throw new NotFoundError("Homepage destination image not found");
     const normalized = normalizeDestinationUpdate(input);
-    const row = await this.repository.updateDestinationImage(
-      trx,
-      actor.userId,
-      id,
-      normalized
-    );
+    const row = await this.repository.updateDestinationImage(trx, actor.userId, id, normalized);
     if (!row) {
       throw new ConflictError("Homepage destination image changed since it was loaded");
     }
@@ -614,12 +578,7 @@ export class HomepageContentService {
     }
     const before = await this.repository.findDestinationImage(trx, id);
     if (!before) throw new NotFoundError("Homepage destination image not found");
-    const row = await this.repository.archiveDestinationImage(
-      trx,
-      actor.userId,
-      id,
-      version
-    );
+    const row = await this.repository.archiveDestinationImage(trx, actor.userId, id, version);
     if (!row) {
       throw new ConflictError("Homepage destination image changed since it was loaded");
     }

@@ -39,30 +39,20 @@ export class HomepageContentRepository {
       .execute();
   }
 
-  async listPublicHeroSlides(
-    db: DbExecutor,
-    now: Date
-  ): Promise<HomepageHeroSlideRecord[]> {
+  async listPublicHeroSlides(db: DbExecutor, now: Date): Promise<HomepageHeroSlideRecord[]> {
     return db
       .selectFrom("homepage_hero_slides")
       .selectAll()
       .where("status", "=", "ACTIVE")
       .where("enabled", "=", true)
-      .where((eb) =>
-        eb.or([eb("starts_at", "is", null), eb("starts_at", "<=", now)])
-      )
-      .where((eb) =>
-        eb.or([eb("ends_at", "is", null), eb("ends_at", ">", now)])
-      )
+      .where((eb) => eb.or([eb("starts_at", "is", null), eb("starts_at", "<=", now)]))
+      .where((eb) => eb.or([eb("ends_at", "is", null), eb("ends_at", ">", now)]))
       .orderBy("sort_order")
       .orderBy("created_at")
       .execute();
   }
 
-  async findHeroSlide(
-    db: DbExecutor,
-    id: string
-  ): Promise<HomepageHeroSlideRecord | undefined> {
+  async findHeroSlide(db: DbExecutor, id: string): Promise<HomepageHeroSlideRecord | undefined> {
     return db
       .selectFrom("homepage_hero_slides")
       .selectAll()
@@ -183,9 +173,7 @@ export class HomepageContentRepository {
       .executeTakeFirst();
   }
 
-  async listDestinationImages(
-    db: DbExecutor
-  ): Promise<HomepageDestinationImageRecord[]> {
+  async listDestinationImages(db: DbExecutor): Promise<HomepageDestinationImageRecord[]> {
     return db
       .selectFrom("homepage_destination_images")
       .selectAll()
@@ -322,9 +310,7 @@ export class HomepageContentRepository {
       .executeTakeFirst();
   }
 
-  async listLiveDestinations(
-    db: DbExecutor
-  ): Promise<HomepageLiveDestinationRecord[]> {
+  async listLiveDestinations(db: DbExecutor): Promise<HomepageLiveDestinationRecord[]> {
     return db
       .selectFrom("properties as p")
       .select([
@@ -375,12 +361,8 @@ export class HomepageContentRepository {
       .where("id", "=", mediaId)
       .where("status", "=", "ACTIVE")
       .where("enabled", "=", true)
-      .where((eb) =>
-        eb.or([eb("starts_at", "is", null), eb("starts_at", "<=", now)])
-      )
-      .where((eb) =>
-        eb.or([eb("ends_at", "is", null), eb("ends_at", ">", now)])
-      )
+      .where((eb) => eb.or([eb("starts_at", "is", null), eb("starts_at", "<=", now)]))
+      .where((eb) => eb.or([eb("ends_at", "is", null), eb("ends_at", ">", now)]))
       .executeTakeFirst();
     if (hero) return hero;
 

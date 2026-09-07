@@ -10,10 +10,7 @@ import {
   HomepageContentUploadService,
   MAX_HOMEPAGE_IMAGE_BYTES
 } from "../application/homepage-content-upload-service.js";
-import {
-  AuthenticationError,
-  ValidationError
-} from "../../../shared/errors/app-error.js";
+import { AuthenticationError, ValidationError } from "../../../shared/errors/app-error.js";
 import { requireAuthentication } from "../../../shared/http/authenticate.js";
 import { requestMetadata } from "../../../shared/http/request-metadata.js";
 import { IdempotencyService } from "../../../shared/idempotency/idempotency-service.js";
@@ -289,14 +286,7 @@ const publicHomepageResponseSchema = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: [
-          "city",
-          "stateRegion",
-          "countryCode",
-          "propertyCount",
-          "imageId",
-          "altText"
-        ],
+        required: ["city", "stateRegion", "countryCode", "propertyCount", "imageId", "altText"],
         properties: {
           city: { type: "string" },
           stateRegion: nullableString,
@@ -358,10 +348,7 @@ export async function registerHomepageContentRoutes(
       }
     },
     async (request, reply) => {
-      const storageKey = await service.getPublicMediaStorage(
-        deps.db,
-        request.params.mediaId
-      );
+      const storageKey = await service.getPublicMediaStorage(deps.db, request.params.mediaId);
       const url = await deps.propertyAssetStorage.createReadUrl(
         storageKey,
         new Date(Date.now() + 10 * 60 * 1000)
@@ -402,11 +389,7 @@ export async function registerHomepageContentRoutes(
     async (request, reply) => {
       const actor = request.actor;
       if (!actor) throw new AuthenticationError();
-      const storageKey = await service.getAdminMediaStorage(
-        deps.db,
-        actor,
-        request.params.mediaId
-      );
+      const storageKey = await service.getAdminMediaStorage(deps.db, actor, request.params.mediaId);
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
       const url = await deps.propertyAssetStorage.createReadUrl(storageKey, expiresAt);
       void reply.header("cache-control", "no-store");
