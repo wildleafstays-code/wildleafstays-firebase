@@ -12,6 +12,7 @@ const CONTROL_CENTER_MANAGE_ROLES = new Set([
   "OPERATIONS_ADMIN",
   "CUSTOMER_SUPPORT",
 ]);
+const HOMEPAGE_CONTENT_ROLES = new Set(["SUPER_ADMIN", "CONTENT_MANAGER"]);
 const EDITABLE_STATUSES = new Set(["DRAFT", "CHANGES_REQUIRED"]);
 
 export function canReviewProperties(session) {
@@ -30,6 +31,12 @@ export function canManagePlatformReservations(session) {
   );
 }
 
+export function canManageHomepageContent(session) {
+  return (session?.platformRoles || []).some((role) =>
+    HOMEPAGE_CONTENT_ROLES.has(role),
+  );
+}
+
 export function editableProperty(status) {
   return EDITABLE_STATUSES.has(status);
 }
@@ -37,6 +44,7 @@ export function editableProperty(status) {
 export function availableScreens(session) {
   const screens = [];
   if (canUseControlCenter(session)) screens.push("control");
+  if (canManageHomepageContent(session)) screens.push("homepage");
   if (canReviewProperties(session)) screens.push("reviews");
   if ((session?.organizations || []).length > 0)
     screens.push("dashboard", "properties", "reservations", "calendar");
