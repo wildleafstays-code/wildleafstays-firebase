@@ -156,7 +156,7 @@ test("Wildleaf Match stays out of simple searches and is collapsible for complex
   assert.match(propertySource, /const complexSearch =/);
   assert.match(
     propertySource,
-    /requestedRoomCount\(\) > 1 \|\| totals\.adults \+ totals\.children > 2/,
+    /requestedRooms > 1 \|\| totals\.adults \+ totals\.children > 2/,
   );
   assert.match(propertySource, /smartMatchSection\.open = false/);
 });
@@ -231,4 +231,11 @@ test("infant occupancy classification is isolated from exact quote child ages", 
   assert.match(propertySource, /return 5/);
   assert.match(propertySource, /function availabilityChildrenForUnit\(unit\)/);
   assert.match(propertySource, /childAges: \[\.\.\.unit\.childAges\]/);
+});
+
+
+test("Wildleaf Match sends the guest requested room count instead of inventing extra rooms", () => {
+  assert.match(propertySource, /const requestedRooms = requestedRoomCount\(\)/);
+  assert.match(propertySource, /requestedRooms,/);
+  assert.match(propertySource, /!complexSearch \|\| requestedRooms > 6/);
 });

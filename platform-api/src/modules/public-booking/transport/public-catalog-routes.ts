@@ -1436,6 +1436,7 @@ export async function registerPublicCatalogRoutes(
               maxItems: 20,
               items: { type: "integer", minimum: 0, maximum: 17 }
             },
+            requestedRooms: { type: "integer", minimum: 1, maximum: 6 },
             maxRooms: { type: "integer", minimum: 1, maximum: 6 }
           }
         },

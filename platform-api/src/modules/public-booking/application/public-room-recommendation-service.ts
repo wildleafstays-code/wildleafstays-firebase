@@ -114,7 +114,10 @@ export class PublicRecommendationGuestAgePolicyReader {
   }
 }
 
-function validateRequest(input: PublicRoomRecommendationRequest): number {
+function validateRequest(input: PublicRoomRecommendationRequest): {
+  maxRooms: number;
+  requestedRooms: number | null;
+} {
   if (!Number.isInteger(input.adults) || input.adults < 1 || input.adults > 20) {
     throw new ValidationError("Smart room recommendations require between 1 and 20 adults");
   }
@@ -127,7 +130,19 @@ function validateRequest(input: PublicRoomRecommendationRequest): number {
     }
   }
 
-  const requestedMaxRooms = input.maxRooms ?? Math.min(input.adults, 4);
+  const requestedRooms = input.requestedRooms ?? null;
+  if (
+    requestedRooms !== null &&
+    (!Number.isInteger(requestedRooms) ||
+      requestedRooms < 1 ||
+      requestedRooms > MAX_RECOMMENDATION_ROOMS)
+  ) {
+    const message = `requestedRooms must be between 1 and ${MAX_RECOMMENDATION_ROOMS}`;
+    throw new ValidationError(message);
+  }
+
+  const defaultMaxRooms = Math.min(input.adults, 4);
+  const requestedMaxRooms = input.maxRooms ?? Math.max(defaultMaxRooms, requestedRooms ?? 1);
   if (
     !Number.isInteger(requestedMaxRooms) ||
     requestedMaxRooms < 1 ||
@@ -136,7 +151,14 @@ function validateRequest(input: PublicRoomRecommendationRequest): number {
     throw new ValidationError(`maxRooms must be between 1 and ${MAX_RECOMMENDATION_ROOMS}`);
   }
 
-  return Math.min(requestedMaxRooms, input.adults);
+  if (requestedRooms !== null && requestedRooms > requestedMaxRooms) {
+    throw new ValidationError("requestedRooms cannot exceed maxRooms");
+  }
+
+  return {
+    maxRooms: Math.min(requestedMaxRooms, input.adults),
+    requestedRooms
+  };
 }
 
 function classifyAges(childAges: number[], policy: GuestAgePolicy | null): ClassifiedAges {
@@ -360,6 +382,30 @@ function unitsSignature(units: Array<{ adults: number; children: number }>): str
     .join(",");
 }
 
+function chooseRoomIntentCandidates(
+  priced: PricedCandidate[],
+  requestedRooms: number | null
+): PricedCandidate[] {
+  if (requestedRooms === null) return priced;
+
+  const exact = priced.filter((candidate) => {
+    return candidate.candidate.choices.length === requestedRooms;
+  });
+  if (exact.length > 0) return exact;
+
+  const largerRoomCounts = priced
+    .map((candidate) => candidate.candidate.choices.length)
+    .filter((roomCount) => roomCount > requestedRooms)
+    .sort((left, right) => left - right);
+
+  const fallbackRoomCount = largerRoomCounts[0];
+  if (fallbackRoomCount === undefined) return [];
+
+  return priced.filter((candidate) => {
+    return candidate.candidate.choices.length === fallbackRoomCount;
+  });
+}
+
 function reasonFor(
   candidate: PricedCandidate,
   index: number,
@@ -367,13 +413,15 @@ function reasonFor(
 ): PublicRoomRecommendation["reason"] {
   if (index === 0) return "BEST_VALUE";
 
-  const minimumRooms = Math.min(...all.map((item) => item.candidate.choices.length));
-  const minimumRoomCandidate = all.find(
-    (item) =>
-      item.candidate.choices.length === minimumRooms &&
-      item.estimatedTotalMinor !== all[0]!.estimatedTotalMinor
-  );
-  if (minimumRoomCandidate?.candidate.key === candidate.candidate.key) return "FEWER_ROOMS";
+  const bestRoomCount = all[0]!.candidate.choices.length;
+  const fewerRooms = [...all]
+    .filter((item) => item.candidate.choices.length < bestRoomCount)
+    .sort(
+      (left, right) =>
+        left.candidate.choices.length - right.candidate.choices.length ||
+        left.estimatedTotalMinor - right.estimatedTotalMinor
+    )[0];
+  if (fewerRooms?.candidate.key === candidate.candidate.key) return "FEWER_ROOMS";
 
   const spacious = [...all]
     .filter((item) => item.candidate.key !== all[0]!.candidate.key)
@@ -399,7 +447,7 @@ export class PublicRoomRecommendationService {
     publicSlug: string,
     input: PublicRoomRecommendationRequest
   ): Promise<PublicRoomRecommendationView> {
-    const maxRooms = validateRequest(input);
+    const { maxRooms, requestedRooms } = validateRequest(input);
     const [{ property }, agePolicy] = await Promise.all([
       this.catalog.getProperty(db, publicSlug),
       this.agePolicies.resolve(db, publicSlug, input.arrivalDate)
@@ -531,14 +579,16 @@ export class PublicRoomRecommendationService {
       });
     }
 
-    priced.sort(
+    const intentCandidates = chooseRoomIntentCandidates(priced, requestedRooms);
+
+    intentCandidates.sort(
       (left, right) =>
         left.estimatedTotalMinor - right.estimatedTotalMinor ||
-        left.candidate.choices.length - right.candidate.choices.length ||
-        right.candidate.occupancySlack - left.candidate.occupancySlack
+        right.candidate.occupancySlack - left.candidate.occupancySlack ||
+        left.candidate.key.localeCompare(right.candidate.key)
     );
 
-    const selected = priced.slice(0, MAX_RECOMMENDATIONS);
+    const selected = intentCandidates.slice(0, MAX_RECOMMENDATIONS);
     const recommendations: PublicRoomRecommendation[] = selected.map((candidate, index) => ({
       recommendationId: recommendationId(candidate.candidate.key),
       rank: index + 1,
