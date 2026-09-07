@@ -344,6 +344,26 @@ export class HomepageContentRepository {
       .execute() as Promise<HomepageLiveDestinationRecord[]>;
   }
 
+  async findAdminMediaStorage(
+    db: DbExecutor,
+    mediaId: string
+  ): Promise<HomepageMediaStorageRecord | undefined> {
+    const hero = await db
+      .selectFrom("homepage_hero_slides")
+      .select("storage_key")
+      .where("id", "=", mediaId)
+      .where("status", "=", "ACTIVE")
+      .executeTakeFirst();
+    if (hero) return hero;
+
+    return db
+      .selectFrom("homepage_destination_images")
+      .select("storage_key")
+      .where("id", "=", mediaId)
+      .where("status", "=", "ACTIVE")
+      .executeTakeFirst();
+  }
+
   async findPublicMediaStorage(
     db: DbExecutor,
     mediaId: string,
