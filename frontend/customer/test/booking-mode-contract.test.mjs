@@ -251,6 +251,22 @@ test("homepage uses one fluid desktop search rail and a compact mobile search tr
   assert.match(homeSource, /function renderDestinations\(destinations\)/);
 });
 
+test("managed homepage heroes can be image-only without automatic fallback copy", () => {
+  assert.match(homeSource, /heroEyebrow\.classList\.add\("hidden"\)/);
+  assert.match(
+    homeSource,
+    /heroHeadline\.classList\.toggle\("hidden", !slide\.headline\)/,
+  );
+  assert.match(
+    homeSource,
+    /heroSubtitle\.classList\.toggle\("hidden", !slide\.subtitle\)/,
+  );
+  assert.doesNotMatch(
+    homeSource,
+    /Handpicked stays with live availability and secure booking\./,
+  );
+});
+
 test("room category photo action uses the room's own published media collection", () => {
   assert.match(propertySource, /category\.media \|\| \[\]/);
   assert.match(propertySource, /function openPhotoCollection\(media, index = 0\)/);
