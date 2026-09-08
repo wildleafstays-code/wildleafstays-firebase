@@ -199,8 +199,8 @@ export interface PropertiesTable {
   name: string;
   status: string;
   timezone: string;
-  property_category_id: string;
-  property_type_id: string;
+  property_category_id: ColumnType<string | null, string | null | undefined, string | null | undefined>;
+  property_type_id: ColumnType<string | null, string | null | undefined, string | null | undefined>;
   property_type: ColumnType<string | null, string | null | undefined, string | null | undefined>;
   sale_mode: ColumnType<string | null, string | null | undefined, string | null | undefined>;
   short_description: ColumnType<
