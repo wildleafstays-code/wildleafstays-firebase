@@ -183,6 +183,56 @@ describe("homepage content manager", () => {
     );
   });
 
+  it("publishes an image-only hero when all optional copy is blank", async () => {
+    const service = new HomepageContentService();
+    const managerUserId = await createUser("image-only-manager");
+    const manager = actor(managerUserId, ["CONTENT_MANAGER"]);
+
+    const created = await db.transaction().execute((trx) =>
+      service.createHeroSlide(
+        trx,
+        manager,
+        {
+          headline: "",
+          subtitle: null,
+          offerLabel: null,
+          ctaLabel: null,
+          ctaHref: null,
+          altText: null,
+          focalXPercent: 50,
+          focalYPercent: 50,
+          sortOrder: 0,
+          enabled: true,
+          startsAt: null,
+          endsAt: null
+        },
+        {
+          storageProvider: "GCS",
+          storageKey: `private-homepage-test/${randomUUID()}/image-only.webp`,
+          mimeType: "image/webp"
+        },
+        requestMetadata()
+      )
+    );
+
+    try {
+      const publicView = await service.getPublicHomepage(db);
+      expect(publicView.heroSlides.find((slide) => slide.id === created.heroSlide.id)).toMatchObject({
+        headline: "",
+        subtitle: null,
+        offerLabel: null,
+        ctaLabel: null,
+        ctaHref: null,
+        imageId: created.heroSlide.id
+      });
+    } finally {
+      await db
+        .deleteFrom("homepage_hero_slides")
+        .where("id", "=", created.heroSlide.id)
+        .execute();
+    }
+  });
+
   it("uses real live destination counts, supports destination photography, and enforces optimistic versions", async () => {
     const service = new HomepageContentService();
     const managerUserId = await createUser("destination-manager");
