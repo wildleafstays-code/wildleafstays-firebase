@@ -72,9 +72,10 @@ export function profilePayload(form, version) {
     version,
     name: String(form.name || "").trim(),
     timezone: String(form.timezone || "Asia/Kolkata").trim(),
+    propertyCategoryId: String(form.propertyCategoryId || "").trim(),
+    propertyTypeId: String(form.propertyTypeId || "").trim(),
   };
   for (const key of [
-    "propertyType",
     "saleMode",
     "shortDescription",
     "description",
