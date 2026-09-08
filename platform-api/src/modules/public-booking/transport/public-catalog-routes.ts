@@ -1302,9 +1302,7 @@ export async function registerPublicCatalogRoutes(
         ...(request.query.categoryId === undefined
           ? {}
           : { categoryId: request.query.categoryId }),
-        ...(request.query.typeId === undefined
-          ? {}
-          : { typeId: request.query.typeId }),
+        ...(request.query.typeId === undefined ? {} : { typeId: request.query.typeId }),
         limit: request.query.limit ?? 50,
         offset: request.query.offset ?? 0
       });
