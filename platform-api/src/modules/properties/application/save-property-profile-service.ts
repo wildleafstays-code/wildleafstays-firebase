@@ -84,11 +84,7 @@ export class SavePropertyProfileService {
       });
     }
 
-    const after = await this.repository.saveProfile(
-      trx,
-      input,
-      taxonomy.legacyPropertyType
-    );
+    const after = await this.repository.saveProfile(trx, input, taxonomy.legacyPropertyType);
     if (!after) {
       throw new ConflictError("Property was changed while this request was being processed", {
         propertyId: input.propertyId,
