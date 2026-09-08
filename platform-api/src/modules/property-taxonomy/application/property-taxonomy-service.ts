@@ -276,16 +276,16 @@ export class PropertyTaxonomyService {
       throw new ValidationError("Select a Property Type belonging to the chosen Property Category");
     }
 
-    const legacyPropertyType =
-      {
-        HOTEL: "HOTEL",
-        RESORT: "RESORT",
-        VILLA: "VILLA",
-        HOMESTAY: "HOMESTAY",
-        COTTAGE_CLUSTER: "COTTAGE_CLUSTER",
-        SERVICED_APARTMENT: "APARTMENT",
-        HOSTEL: "HOSTEL"
-      }[propertyType.code] ?? "OTHER";
+    const legacyPropertyTypes: Record<string, string> = {
+      HOTEL: "HOTEL",
+      RESORT: "RESORT",
+      VILLA: "VILLA",
+      HOMESTAY: "HOMESTAY",
+      COTTAGE_CLUSTER: "COTTAGE_CLUSTER",
+      SERVICED_APARTMENT: "APARTMENT",
+      HOSTEL: "HOSTEL"
+    };
+    const legacyPropertyType = legacyPropertyTypes[propertyType.code] ?? "OTHER";
 
     return { legacyPropertyType };
   }
