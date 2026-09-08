@@ -45,6 +45,7 @@ interface PublicPropertiesQuery {
   categoryId?: string;
   typeId?: string;
   limit?: number;
+  offset?: number;
 }
 
 interface PublicPropertyParams {
@@ -1271,6 +1272,12 @@ export async function registerPublicCatalogRoutes(
               minimum: 1,
               maximum: 100,
               default: 50
+            },
+            offset: {
+              type: "integer",
+              minimum: 0,
+              maximum: 100000,
+              default: 0
             }
           }
         },
@@ -1296,7 +1303,8 @@ export async function registerPublicCatalogRoutes(
           ? {}
           : { categoryId: request.query.categoryId }),
         ...(request.query.typeId === undefined ? {} : { typeId: request.query.typeId }),
-        limit: request.query.limit ?? 50
+        limit: request.query.limit ?? 50,
+        offset: request.query.offset ?? 0
       });
     }
   );
