@@ -4832,6 +4832,40 @@ function homepageUtcDateTime(value) {
   return date.toISOString();
 }
 
+function homepageNumberOrDefault(value, fallback) {
+  const normalized = String(value ?? "").trim();
+  return normalized === "" ? fallback : Number(normalized);
+}
+
+let homepageAcknowledgementTimer = null;
+
+function showHomepageAcknowledgement(message) {
+  let notice = document.getElementById("homepageSaveAcknowledgement");
+  if (!notice) {
+    notice = document.createElement("div");
+    notice.id = "homepageSaveAcknowledgement";
+    notice.className = "notice hidden";
+    notice.setAttribute("role", "status");
+    notice.setAttribute("aria-live", "polite");
+    notice.style.position = "fixed";
+    notice.style.right = "1.5rem";
+    notice.style.bottom = "1.5rem";
+    notice.style.zIndex = "1200";
+    notice.style.maxWidth = "24rem";
+    notice.style.boxShadow = "0 10px 30px rgba(20, 45, 34, 0.18)";
+    document.body.append(notice);
+  }
+
+  notice.textContent = `✓ ${message}`;
+  notice.classList.remove("hidden");
+  if (homepageAcknowledgementTimer) {
+    clearTimeout(homepageAcknowledgementTimer);
+  }
+  homepageAcknowledgementTimer = setTimeout(() => {
+    notice.classList.add("hidden");
+  }, 4000);
+}
+
 function homepageDestinationKey(destination) {
   return JSON.stringify([
     destination.city,
@@ -4912,7 +4946,7 @@ function renderHomepageHeroSlides() {
     preview.className = "homepage-content-preview hero-preview";
     const image = document.createElement("img");
     image.src = slide.previewUrl || homepageMediaUrl(slide.imageId);
-    image.alt = slide.altText || slide.headline;
+    image.alt = slide.altText || slide.headline || "";
     image.loading = "lazy";
     image.style.objectPosition = `${slide.focalXPercent}% ${slide.focalYPercent}%`;
     preview.append(image);
@@ -4922,11 +4956,15 @@ function renderHomepageHeroSlides() {
     if (slide.offerLabel) {
       overlay.append(textElement("span", "homepage-preview-offer", slide.offerLabel));
     }
-    overlay.append(
-      textElement("strong", "", slide.headline),
-      textElement("small", "", slide.subtitle || "No subtitle"),
-    );
-    preview.append(overlay);
+    if (slide.headline) {
+      overlay.append(textElement("strong", "", slide.headline));
+    }
+    if (slide.subtitle) {
+      overlay.append(textElement("small", "", slide.subtitle));
+    }
+    if (overlay.childElementCount) {
+      preview.append(overlay);
+    }
 
     const status = document.createElement("div");
     status.className = "homepage-content-status";
@@ -4942,21 +4980,21 @@ function renderHomepageHeroSlides() {
     const form = document.createElement("form");
     form.className = "form-grid two-column homepage-inline-editor";
     form.innerHTML = `
-      <label class="span-two">Headline<input name="headline" maxlength="160" required /></label>
-      <label class="span-two">Subtitle<input name="subtitle" maxlength="300" /></label>
-      <label>Offer / banner<input name="offerLabel" maxlength="80" /></label>
-      <label>Display order<input name="sortOrder" type="number" min="0" max="10000" required /></label>
-      <label>CTA text<input name="ctaLabel" maxlength="60" /></label>
-      <label>CTA link<input name="ctaHref" maxlength="500" /></label>
-      <label>Starts at<input name="startsAt" type="datetime-local" /></label>
-      <label>Ends at<input name="endsAt" type="datetime-local" /></label>
-      <label>Horizontal focal point (%)<input name="focalXPercent" type="number" min="0" max="100" required /></label>
-      <label>Vertical focal point (%)<input name="focalYPercent" type="number" min="0" max="100" required /></label>
-      <label class="span-two">Image description<input name="altText" maxlength="500" /></label>
+      <label class="span-two">Headline <span class="optional">optional</span><input name="headline" maxlength="160" /></label>
+      <label class="span-two">Subtitle <span class="optional">optional</span><input name="subtitle" maxlength="300" /></label>
+      <label>Offer / banner <span class="optional">optional</span><input name="offerLabel" maxlength="80" /></label>
+      <label>Display order <span class="optional">optional</span><input name="sortOrder" type="number" min="0" max="10000" /></label>
+      <label>CTA text <span class="optional">optional</span><input name="ctaLabel" maxlength="60" /></label>
+      <label>CTA link <span class="optional">optional</span><input name="ctaHref" maxlength="500" /></label>
+      <label>Starts at <span class="optional">optional</span><input name="startsAt" type="datetime-local" /></label>
+      <label>Ends at <span class="optional">optional</span><input name="endsAt" type="datetime-local" /></label>
+      <label>Horizontal focal point (%) <span class="optional">optional</span><input name="focalXPercent" type="number" min="0" max="100" /></label>
+      <label>Vertical focal point (%) <span class="optional">optional</span><input name="focalYPercent" type="number" min="0" max="100" /></label>
+      <label class="span-two">Image description <span class="optional">optional</span><input name="altText" maxlength="500" /></label>
       <label class="check-control span-two"><input name="enabled" type="checkbox" /> Publish this slide</label>
       <button class="span-two" type="submit">Save slide settings</button>
     `;
-    form.elements.headline.value = slide.headline;
+    form.elements.headline.value = slide.headline || "";
     form.elements.subtitle.value = slide.subtitle || "";
     form.elements.offerLabel.value = slide.offerLabel || "";
     form.elements.sortOrder.value = String(slide.sortOrder);
@@ -4984,9 +5022,9 @@ function renderHomepageHeroSlides() {
             ctaLabel: String(values.ctaLabel || "").trim() || null,
             ctaHref: String(values.ctaHref || "").trim() || null,
             altText: String(values.altText || "").trim() || null,
-            focalXPercent: Number(values.focalXPercent),
-            focalYPercent: Number(values.focalYPercent),
-            sortOrder: Number(values.sortOrder),
+            focalXPercent: homepageNumberOrDefault(values.focalXPercent, 50),
+            focalYPercent: homepageNumberOrDefault(values.focalYPercent, 50),
+            sortOrder: homepageNumberOrDefault(values.sortOrder, 0),
             enabled: form.elements.enabled.checked,
             startsAt: homepageUtcDateTime(form.elements.startsAt.value),
             endsAt: homepageUtcDateTime(form.elements.endsAt.value),
@@ -4994,7 +5032,8 @@ function renderHomepageHeroSlides() {
           },
         );
         await loadHomepageContent();
-        showMessage("Homepage hero slide updated.");
+        showMessage("✓ Homepage hero slide saved successfully.");
+        showHomepageAcknowledgement("Homepage hero slide saved successfully.");
       });
     });
 
@@ -5029,7 +5068,8 @@ function renderHomepageHeroSlides() {
           "homepage-hero-image-replace",
         );
         await loadHomepageContent();
-        showMessage("Homepage hero image replaced.");
+        showMessage("✓ Homepage hero image replaced successfully.");
+        showHomepageAcknowledgement("Homepage hero image replaced successfully.");
       });
     });
 
@@ -5163,7 +5203,8 @@ function renderHomepageDestinationImages() {
           },
         );
         await loadHomepageContent();
-        showMessage("Destination homepage settings updated.");
+        showMessage("✓ Destination homepage settings saved successfully.");
+        showHomepageAcknowledgement("Destination homepage settings saved successfully.");
       });
     });
 
@@ -5198,7 +5239,8 @@ function renderHomepageDestinationImages() {
           "homepage-destination-image-replace",
         );
         await loadHomepageContent();
-        showMessage("Destination image replaced.");
+        showMessage("✓ Destination image replaced successfully.");
+        showHomepageAcknowledgement("Destination image replaced successfully.");
       });
     });
 
@@ -5240,13 +5282,13 @@ byId("homepageHeroCreateForm").addEventListener("submit", (event) => {
     }
 
     const query = new URLSearchParams({
-      headline: String(values.headline || "").trim(),
-      focalXPercent: String(Number(values.focalXPercent)),
-      focalYPercent: String(Number(values.focalYPercent)),
-      sortOrder: String(Number(values.sortOrder)),
+      focalXPercent: String(homepageNumberOrDefault(values.focalXPercent, 50)),
+      focalYPercent: String(homepageNumberOrDefault(values.focalYPercent, 50)),
+      sortOrder: String(homepageNumberOrDefault(values.sortOrder, 0)),
       enabled: String(form.elements.enabled.checked),
     });
     for (const [key, value] of [
+      ["headline", String(values.headline || "").trim()],
       ["subtitle", String(values.subtitle || "").trim()],
       ["offerLabel", String(values.offerLabel || "").trim()],
       ["ctaLabel", String(values.ctaLabel || "").trim()],
@@ -5269,7 +5311,8 @@ byId("homepageHeroCreateForm").addEventListener("submit", (event) => {
     form.elements.sortOrder.value = "0";
     form.elements.enabled.checked = true;
     await loadHomepageContent();
-    showMessage("Homepage hero slide added.");
+    showMessage("✓ Homepage hero slide added successfully.");
+    showHomepageAcknowledgement("Homepage hero slide added successfully.");
   });
 });
 
@@ -5307,6 +5350,7 @@ byId("homepageDestinationForm").addEventListener("submit", (event) => {
     form.elements.sortOrder.value = "0";
     form.elements.enabled.checked = true;
     await loadHomepageContent();
-    showMessage("Destination image added to the homepage.");
+    showMessage("✓ Destination image saved successfully.");
+    showHomepageAcknowledgement("Destination image saved successfully.");
   });
 });
