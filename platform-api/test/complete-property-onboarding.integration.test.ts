@@ -25,6 +25,25 @@ function requestMetadata() {
   };
 }
 
+async function resortTaxonomy(): Promise<{
+  propertyCategoryId: string;
+  propertyTypeId: string;
+}> {
+  const row = await db
+    .selectFrom("property_types as type")
+    .innerJoin("property_categories as category", "category.id", "type.property_category_id")
+    .select(["category.id as category_id", "type.id as type_id"])
+    .where("type.code", "=", "RESORT")
+    .where("type.status", "=", "ACTIVE")
+    .where("category.status", "=", "ACTIVE")
+    .executeTakeFirstOrThrow();
+
+  return {
+    propertyCategoryId: row.category_id,
+    propertyTypeId: row.type_id
+  };
+}
+
 async function createOwnerPropertyFixture(): Promise<{
   actor: ActorContext;
   organizationId: string;
@@ -86,7 +105,8 @@ async function createOwnerPropertyFixture(): Promise<{
       {
         organizationId: organization.organizationId,
         name: `Wildleaf Onboarding ${randomUUID()}`,
-        timezone: "Asia/Kolkata"
+        timezone: "Asia/Kolkata",
+        ...(await resortTaxonomy())
       },
       requestMetadata()
     )
@@ -147,7 +167,6 @@ async function makePropertyReady(): Promise<{
   await db
     .updateTable("properties")
     .set({
-      property_type: "RESORT",
       sale_mode: "BOTH",
       address_line_1: "Chail Road",
       city: "Chail",
