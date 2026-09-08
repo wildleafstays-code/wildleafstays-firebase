@@ -293,10 +293,19 @@ async function loadProperties(destinationOverride = null) {
   if (typeId) query.set("typeId", typeId);
 
   try {
-    const data = await apiRequest(`/v1/public/properties?${query}`, {
-      cache: "default",
-    });
-    state.properties = data.properties || [];
+    const properties = [];
+    let offset = 0;
+    while (true) {
+      query.set("offset", String(offset));
+      const data = await apiRequest(`/v1/public/properties?${query}`, {
+        cache: "default",
+      });
+      const page = data.properties || [];
+      properties.push(...page);
+      if (page.length < 100) break;
+      offset += page.length;
+    }
+    state.properties = properties;
     renderProperties(state.properties);
   } catch (error) {
     renderError(error);
