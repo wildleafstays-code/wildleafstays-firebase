@@ -204,11 +204,7 @@ export interface PropertiesTable {
     string | null | undefined,
     string | null | undefined
   >;
-  property_type_id: ColumnType<
-    string | null,
-    string | null | undefined,
-    string | null | undefined
-  >;
+  property_type_id: ColumnType<string | null, string | null | undefined, string | null | undefined>;
   property_type: ColumnType<string | null, string | null | undefined, string | null | undefined>;
   sale_mode: ColumnType<string | null, string | null | undefined, string | null | undefined>;
   short_description: ColumnType<
