@@ -1,0 +1,35 @@
+name: Frontend Contract CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-contract-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-contract-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Run frontend contract tests
+        run: |
+          node --test \
+            frontend/admin/test/portal-contract.test.mjs \
+            frontend/customer/test/booking-mode-contract.test.mjs
