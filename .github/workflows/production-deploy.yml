@@ -10,6 +10,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    paths:
+      - ".github/workflows/production-deploy.yml"
 
 permissions:
   contents: read
@@ -31,6 +34,21 @@ env:
   FIREBASE_TOOLS_VERSION: "15.23.0"
 
 jobs:
+  workflow-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Confirm production workflow stays approval-gated
+        run: |
+          grep -F "contains(github.event.head_commit.message, '[deploy]')" .github/workflows/production-deploy.yml
+          grep -F "inputs.confirm == 'DEPLOY'" .github/workflows/production-deploy.yml
+          grep -F "refs/heads/main" .github/workflows/production-deploy.yml
+
   validate:
     if: >-
       (github.event_name == 'workflow_dispatch' && inputs.confirm == 'DEPLOY') ||
