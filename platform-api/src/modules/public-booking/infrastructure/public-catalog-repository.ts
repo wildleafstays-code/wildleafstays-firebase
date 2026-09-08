@@ -15,7 +15,10 @@ export interface PublicPropertyRecord {
   organization_id: string;
   public_slug: string | null;
   name: string;
-  property_type: string | null;
+  property_category_id: string | null;
+  property_category_name: string | null;
+  property_type_id: string | null;
+  property_type_name: string | null;
   sale_mode: string | null;
   short_description: string | null;
   description: string | null;
@@ -118,10 +121,14 @@ export class PublicCatalogRepository {
   async listProperties(
     db: DbExecutor,
     destination: string | null,
+    categoryId: string | null,
+    typeId: string | null,
     limit: number
   ): Promise<PublicPropertyRecord[]> {
     let query = db
       .selectFrom("properties as p")
+      .leftJoin("property_categories as taxonomy_category", "taxonomy_category.id", "p.property_category_id")
+      .leftJoin("property_types as taxonomy_type", "taxonomy_type.id", "p.property_type_id")
       .leftJoin("property_media as cover", (join) =>
         join
           .onRef("cover.organization_id", "=", "p.organization_id")
@@ -135,7 +142,10 @@ export class PublicCatalogRepository {
         "p.organization_id as organization_id",
         "p.public_slug as public_slug",
         "p.name as name",
-        "p.property_type as property_type",
+        "p.property_category_id as property_category_id",
+        "taxonomy_category.name as property_category_name",
+        "p.property_type_id as property_type_id",
+        "taxonomy_type.name as property_type_name",
         "p.sale_mode as sale_mode",
         "p.short_description as short_description",
         "p.description as description",
@@ -150,6 +160,14 @@ export class PublicCatalogRepository {
       .distinct()
       .where("p.status", "=", "LIVE")
       .where("p.public_slug", "is not", null);
+
+    if (categoryId !== null) {
+      query = query.where("p.property_category_id", "=", categoryId);
+    }
+
+    if (typeId !== null) {
+      query = query.where("p.property_type_id", "=", typeId);
+    }
 
     if (destination !== null) {
       query = query.where(
@@ -172,6 +190,8 @@ export class PublicCatalogRepository {
   ): Promise<PublicPropertyRecord | undefined> {
     return db
       .selectFrom("properties as p")
+      .leftJoin("property_categories as taxonomy_category", "taxonomy_category.id", "p.property_category_id")
+      .leftJoin("property_types as taxonomy_type", "taxonomy_type.id", "p.property_type_id")
       .leftJoin("property_media as cover", (join) =>
         join
           .onRef("cover.organization_id", "=", "p.organization_id")
@@ -185,7 +205,10 @@ export class PublicCatalogRepository {
         "p.organization_id as organization_id",
         "p.public_slug as public_slug",
         "p.name as name",
-        "p.property_type as property_type",
+        "p.property_category_id as property_category_id",
+        "taxonomy_category.name as property_category_name",
+        "p.property_type_id as property_type_id",
+        "taxonomy_type.name as property_type_name",
         "p.sale_mode as sale_mode",
         "p.short_description as short_description",
         "p.description as description",
