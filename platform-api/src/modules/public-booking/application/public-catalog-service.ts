@@ -20,7 +20,10 @@ function propertySummary(record: PublicPropertyRecord): PublicPropertySummaryVie
   return {
     publicSlug: record.public_slug as string,
     name: record.name,
-    propertyType: record.property_type,
+    propertyCategoryId: record.property_category_id,
+    propertyCategoryName: record.property_category_name,
+    propertyTypeId: record.property_type_id,
+    propertyTypeName: record.property_type_name,
     saleMode: record.sale_mode,
     shortDescription: record.short_description,
     locality: record.locality,
@@ -48,10 +51,16 @@ export class PublicCatalogService {
 
   async listProperties(
     db: Kysely<Database>,
-    input: { destination?: string; limit: number }
+    input: { destination?: string; categoryId?: string; typeId?: string; limit: number }
   ): Promise<{ properties: PublicPropertySummaryView[] }> {
     const destination = input.destination?.trim() || null;
-    const rows = await this.repository.listProperties(db, destination, input.limit);
+    const rows = await this.repository.listProperties(
+      db,
+      destination,
+      input.categoryId?.trim() || null,
+      input.typeId?.trim() || null,
+      input.limit
+    );
     return {
       properties: rows.map(propertySummary)
     };
