@@ -63,6 +63,10 @@ const state = {
     destinationImages: [],
     liveDestinations: [],
   },
+  propertyTaxonomy: {
+    categories: [],
+    types: [],
+  },
 };
 
 const byId = (id) => document.getElementById(id);
@@ -181,6 +185,146 @@ function idempotent(path, method, operation, body = {}) {
     body,
     idempotencyKey: newIdempotencyKey(operation),
   });
+}
+
+function taxonomyCategoryById(categoryId) {
+  return (state.propertyTaxonomy.categories || []).find(
+    (category) => category.id === categoryId,
+  );
+}
+
+function taxonomyTypeById(typeId) {
+  return (state.propertyTaxonomy.types || []).find(
+    (propertyType) => propertyType.id === typeId,
+  );
+}
+
+function taxonomyTypesForCategory(categoryId, { includeDisabled = false } = {}) {
+  return (state.propertyTaxonomy.types || [])
+    .filter(
+      (propertyType) =>
+        propertyType.categoryId === categoryId &&
+        (includeDisabled || propertyType.enabled),
+    )
+    .sort(
+      (left, right) =>
+        Number(left.sortOrder || 0) - Number(right.sortOrder || 0) ||
+        left.name.localeCompare(right.name),
+    );
+}
+
+function populateTaxonomyCategorySelect(
+  select,
+  selectedId = "",
+  { includeDisabled = false, placeholder = "Select category" } = {},
+) {
+  const categories = (state.propertyTaxonomy.categories || [])
+    .filter((category) => includeDisabled || category.enabled)
+    .sort(
+      (left, right) =>
+        Number(left.sortOrder || 0) - Number(right.sortOrder || 0) ||
+        left.name.localeCompare(right.name),
+    );
+
+  select.replaceChildren();
+  const placeholderOption = textElement("option", "", placeholder);
+  placeholderOption.value = "";
+  select.append(placeholderOption);
+
+  for (const category of categories) {
+    const option = textElement(
+      "option",
+      "",
+      `${category.name}${category.enabled ? "" : " (disabled)"}`,
+    );
+    option.value = category.id;
+    option.selected = category.id === selectedId;
+    select.append(option);
+  }
+
+  select.disabled = categories.length === 0;
+  if (selectedId && categories.some((category) => category.id === selectedId)) {
+    select.value = selectedId;
+  }
+}
+
+function populateTaxonomyTypeSelect(
+  select,
+  categoryId,
+  selectedId = "",
+  { includeDisabled = false } = {},
+) {
+  const types = categoryId
+    ? taxonomyTypesForCategory(categoryId, { includeDisabled })
+    : [];
+
+  select.replaceChildren();
+  const placeholder = textElement(
+    "option",
+    "",
+    categoryId ? "Select property type" : "Select category first",
+  );
+  placeholder.value = "";
+  select.append(placeholder);
+
+  for (const propertyType of types) {
+    const option = textElement(
+      "option",
+      "",
+      `${propertyType.name}${propertyType.enabled ? "" : " (disabled)"}`,
+    );
+    option.value = propertyType.id;
+    option.selected = propertyType.id === selectedId;
+    select.append(option);
+  }
+
+  select.disabled = !categoryId || types.length === 0;
+  if (selectedId && types.some((propertyType) => propertyType.id === selectedId)) {
+    select.value = selectedId;
+  }
+}
+
+async function loadPublicPropertyTaxonomy() {
+  const data = await api("/v1/public/property-taxonomy");
+  state.propertyTaxonomy = {
+    categories: data.categories || [],
+    types: data.types || [],
+  };
+  return state.propertyTaxonomy;
+}
+
+async function loadAdminPropertyTaxonomy() {
+  const data = await api("/v1/platform/property-taxonomy");
+  state.propertyTaxonomy = {
+    categories: data.categories || [],
+    types: data.types || [],
+  };
+  return state.propertyTaxonomy;
+}
+
+function renderCreatePropertyTaxonomyFields() {
+  const form = byId("createPropertyForm");
+  if (!form) return;
+  const categorySelect = form.elements.propertyCategoryId;
+  const typeSelect = form.elements.propertyTypeId;
+  const selectedCategory = categorySelect.value;
+  const selectedType = typeSelect.value;
+  populateTaxonomyCategorySelect(categorySelect, selectedCategory);
+  populateTaxonomyTypeSelect(typeSelect, categorySelect.value, selectedType);
+}
+
+function renderProfilePropertyTaxonomyFields(property) {
+  const form = byId("profileForm");
+  const categoryId = property.propertyCategoryId || "";
+  const typeId = property.propertyTypeId || "";
+  populateTaxonomyCategorySelect(form.elements.propertyCategoryId, categoryId);
+  populateTaxonomyTypeSelect(form.elements.propertyTypeId, categoryId, typeId);
+}
+
+function propertyTaxonomyLabel(property) {
+  const category = taxonomyCategoryById(property.propertyCategoryId);
+  const propertyType = taxonomyTypeById(property.propertyTypeId);
+  return [category?.name, propertyType?.name].filter(Boolean).join(" · ");
 }
 
 async function managedUpload(path, file, operation) {
@@ -760,7 +904,7 @@ const screenCopy = {
   calendar: ["Partner operations", "Rates and inventory"],
   control: ["Wildleaf management", "Operations control center"],
   homepage: ["Wildleaf management", "Homepage content"],
-  editor: ["Partner portal", "Hotel registration"],
+  editor: ["Partner portal", "Property registration"],
   reviews: ["Wildleaf management", "Property reviews"],
 };
 
@@ -830,6 +974,21 @@ byId("businessForm").addEventListener("submit", (event) => {
 
 byId("showPropertyFormButton").addEventListener("click", () => {
   byId("createPropertyForm").classList.toggle("hidden");
+  renderCreatePropertyTaxonomyFields();
+});
+
+byId("createPropertyCategory").addEventListener("change", (event) => {
+  populateTaxonomyTypeSelect(
+    byId("createPropertyType"),
+    event.currentTarget.value,
+  );
+});
+
+byId("profilePropertyCategory").addEventListener("change", (event) => {
+  populateTaxonomyTypeSelect(
+    byId("profilePropertyType"),
+    event.currentTarget.value,
+  );
 });
 
 byId("organizationSelect").addEventListener("change", (event) => {
@@ -844,10 +1003,16 @@ byId("createPropertyForm").addEventListener("submit", (event) => {
   const body = {
     name: data.name.trim(),
     timezone: data.timezone.trim(),
+    propertyCategoryId: data.propertyCategoryId,
+    propertyTypeId: data.propertyTypeId,
   };
-  const fingerprint = [state.organizationId, body.name, body.timezone].join(
-    ":",
-  );
+  const fingerprint = [
+    state.organizationId,
+    body.name,
+    body.timezone,
+    body.propertyCategoryId,
+    body.propertyTypeId,
+  ].join(":");
   const key =
     pendingPropertyCreateKeys.get(fingerprint) ||
     newIdempotencyKey("property-create");
@@ -865,6 +1030,7 @@ byId("createPropertyForm").addEventListener("submit", (event) => {
     pendingPropertyCreateKeys.delete(fingerprint);
     form.reset();
     form.elements.timezone.value = "Asia/Kolkata";
+    renderCreatePropertyTaxonomyFields();
     form.classList.add("hidden");
     showMessage(
       "Property draft created. Complete the profile and onboarding checklist.",
@@ -896,7 +1062,7 @@ function populatePropertySelect(select, preferredId = "") {
       : state.properties[0]?.id || "";
   select.replaceChildren();
   if (!state.properties.length) {
-    const option = textElement("option", "", "Register a hotel first");
+    const option = textElement("option", "", "Register a property first");
     option.value = "";
     select.append(option);
     select.disabled = true;
@@ -930,12 +1096,13 @@ async function loadProperties() {
     state.organizationId = organizations[0].organizationId;
   if (!state.organizationId) return;
 
-  await fetchOwnerProperties();
+  await Promise.all([fetchOwnerProperties(), loadPublicPropertyTaxonomy()]);
+  renderCreatePropertyTaxonomyFields();
   const list = byId("propertyList");
   list.replaceChildren();
   if (!state.properties.length) {
     list.append(
-      textElement("p", "empty-state card", "No hotels registered yet."),
+      textElement("p", "empty-state card", "No properties registered yet."),
     );
     return;
   }
@@ -952,6 +1119,10 @@ async function loadProperties() {
           "Location not completed",
       ),
     );
+    const taxonomyLabel = propertyTaxonomyLabel(property);
+    if (taxonomyLabel) {
+      copy.append(textElement("small", "muted", taxonomyLabel));
+    }
     copy.append(
       textElement("span", "status-pill", property.status.replaceAll("_", " ")),
     );
@@ -1001,9 +1172,12 @@ async function openProperty(organizationId, propertyId) {
   // A new draft intentionally has no sale mode until the owner completes the
   // Property profile section. Load that profile first so opening registration
   // never depends on a rates workspace that cannot exist yet.
-  const profile = await api(
-    `/v1/partner/organizations/${organizationId}/properties/${propertyId}`,
-  );
+  const [profile] = await Promise.all([
+    api(
+      `/v1/partner/organizations/${organizationId}/properties/${propertyId}`,
+    ),
+    loadPublicPropertyTaxonomy(),
+  ]);
   state.property = profile.property;
 
   // Reading GST consent also materializes Wildleaf's active statutory tax
@@ -1467,6 +1641,7 @@ function renderEditor() {
   const onboarding = state.onboarding;
   byId("editorPropertyName").textContent = property.name;
   byId("editorStatus").textContent = property.status.replaceAll("_", " ");
+  renderProfilePropertyTaxonomyFields(property);
   fillForm(byId("profileForm"), property);
   fillForm(byId("policiesForm"), onboarding.policies || {});
 
@@ -4890,7 +5065,10 @@ async function loadHomepageContent() {
   if (!canManageHomepageContent(state.session)) {
     throw new Error("Your Wildleaf role cannot manage homepage content.");
   }
-  const data = await api("/v1/platform/homepage-content");
+  const [data] = await Promise.all([
+    api("/v1/platform/homepage-content"),
+    loadAdminPropertyTaxonomy(),
+  ]);
   const heroSlides = data.heroSlides || [];
   const destinationImages = data.destinationImages || [];
 
@@ -4919,6 +5097,7 @@ function renderHomepageContent() {
   renderHomepageHeroSlides();
   renderHomepageDestinationOptions();
   renderHomepageDestinationImages();
+  renderPropertyTaxonomyManager();
 }
 
 function homepageEmpty(message) {
@@ -5269,6 +5448,174 @@ function renderHomepageDestinationImages() {
     list.append(card);
   }
 }
+
+
+function renderPropertyTaxonomyManager() {
+  const typeCategorySelect = byId("taxonomyTypeCategory");
+  populateTaxonomyCategorySelect(typeCategorySelect, typeCategorySelect.value, {
+    includeDisabled: true,
+    placeholder: "Choose parent category",
+  });
+
+  const categoryList = byId("propertyCategoryAdminList");
+  categoryList.replaceChildren();
+  for (const category of state.propertyTaxonomy.categories || []) {
+    const card = document.createElement("article");
+    card.className = "homepage-content-item taxonomy-content-item";
+
+    const form = document.createElement("form");
+    form.className = "form-grid two-column homepage-inline-editor";
+    form.innerHTML = `
+      <label class="span-two">Category name<input name="name" maxlength="120" required /></label>
+      <label class="span-two">Homepage heading<input name="homepageHeading" maxlength="160" required /></label>
+      <label>Display order<input name="sortOrder" type="number" min="0" max="10000" required /></label>
+      <label class="check-control"><input name="homepageVisible" type="checkbox" /> Show on homepage when populated</label>
+      <label class="check-control span-two"><input name="enabled" type="checkbox" /> Available for setup and search</label>
+      <button class="span-two" type="submit">Save category</button>
+    `;
+    form.elements.name.value = category.name;
+    form.elements.homepageHeading.value = category.homepageHeading;
+    form.elements.sortOrder.value = String(category.sortOrder);
+    form.elements.homepageVisible.checked = Boolean(category.homepageVisible);
+    form.elements.enabled.checked = Boolean(category.enabled);
+
+    const status = document.createElement("div");
+    status.className = "homepage-content-status";
+    status.append(
+      textElement(
+        "span",
+        category.enabled ? "status-pill complete" : "status-pill",
+        category.enabled ? "Enabled" : "Disabled",
+      ),
+      textElement(
+        "small",
+        "muted",
+        `${Number(category.propertyCount || 0)} live ${Number(category.propertyCount || 0) === 1 ? "property" : "properties"} · version ${category.version}`,
+      ),
+    );
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void run(async () => {
+        await idempotent(
+          `/v1/platform/property-taxonomy/categories/${category.id}`,
+          "PUT",
+          "property-category-update",
+          {
+            name: form.elements.name.value.trim(),
+            homepageHeading: form.elements.homepageHeading.value.trim(),
+            sortOrder: Number(form.elements.sortOrder.value),
+            homepageVisible: form.elements.homepageVisible.checked,
+            enabled: form.elements.enabled.checked,
+            version: category.version,
+          },
+        );
+        await loadHomepageContent();
+        showHomepageAcknowledgement("Property Category saved successfully.");
+      });
+    });
+
+    card.append(status, form);
+    categoryList.append(card);
+  }
+
+  const typeList = byId("propertyTypeAdminList");
+  typeList.replaceChildren();
+  for (const propertyType of state.propertyTaxonomy.types || []) {
+    const parent = taxonomyCategoryById(propertyType.categoryId);
+    const card = document.createElement("article");
+    card.className = "homepage-content-item taxonomy-content-item";
+
+    const heading = document.createElement("div");
+    heading.className = "homepage-content-status";
+    heading.append(
+      textElement("strong", "", propertyType.name),
+      textElement("small", "muted", parent?.name || "Unknown category"),
+    );
+
+    const form = document.createElement("form");
+    form.className = "form-grid two-column homepage-inline-editor";
+    form.innerHTML = `
+      <label class="span-two">Property Type name<input name="name" maxlength="120" required /></label>
+      <label>Display order<input name="sortOrder" type="number" min="0" max="10000" required /></label>
+      <label class="check-control"><input name="enabled" type="checkbox" /> Available for setup and search</label>
+      <button class="span-two" type="submit">Save property type</button>
+    `;
+    form.elements.name.value = propertyType.name;
+    form.elements.sortOrder.value = String(propertyType.sortOrder);
+    form.elements.enabled.checked = Boolean(propertyType.enabled);
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void run(async () => {
+        await idempotent(
+          `/v1/platform/property-taxonomy/types/${propertyType.id}`,
+          "PUT",
+          "property-type-update",
+          {
+            name: form.elements.name.value.trim(),
+            sortOrder: Number(form.elements.sortOrder.value),
+            enabled: form.elements.enabled.checked,
+            version: propertyType.version,
+          },
+        );
+        await loadHomepageContent();
+        showHomepageAcknowledgement("Property Type saved successfully.");
+      });
+    });
+
+    card.append(heading, form);
+    typeList.append(card);
+  }
+}
+
+byId("propertyCategoryCreateForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  void run(async () => {
+    const form = event.currentTarget;
+    await idempotent(
+      "/v1/platform/property-taxonomy/categories",
+      "POST",
+      "property-category-create",
+      {
+        name: form.elements.name.value.trim(),
+        homepageHeading: form.elements.homepageHeading.value.trim(),
+        sortOrder: Number(form.elements.sortOrder.value),
+        homepageVisible: form.elements.homepageVisible.checked,
+        enabled: form.elements.enabled.checked,
+      },
+    );
+    form.reset();
+    form.elements.sortOrder.value = "0";
+    form.elements.homepageVisible.checked = true;
+    form.elements.enabled.checked = true;
+    await loadHomepageContent();
+    showHomepageAcknowledgement("Property Category added successfully.");
+  });
+});
+
+byId("propertyTypeCreateForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  void run(async () => {
+    const form = event.currentTarget;
+    await idempotent(
+      "/v1/platform/property-taxonomy/types",
+      "POST",
+      "property-type-create",
+      {
+        categoryId: form.elements.categoryId.value,
+        name: form.elements.name.value.trim(),
+        sortOrder: Number(form.elements.sortOrder.value),
+        enabled: form.elements.enabled.checked,
+      },
+    );
+    form.reset();
+    form.elements.sortOrder.value = "0";
+    form.elements.enabled.checked = true;
+    await loadHomepageContent();
+    showHomepageAcknowledgement("Property Type added successfully.");
+  });
+});
 
 byId("homepageHeroCreateForm").addEventListener("submit", (event) => {
   event.preventDefault();
