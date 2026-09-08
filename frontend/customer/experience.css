@@ -3280,3 +3280,154 @@ body,
     transition: none;
   }
 }
+
+
+/* Database-driven Property Category discovery */
+.home-page .search-field select {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: #1c2b24;
+  background: transparent;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.home-page .search-field select:disabled {
+  color: #8d9690;
+  cursor: not-allowed;
+}
+
+.property-category-sections {
+  display: grid;
+  gap: 46px;
+  min-width: 0;
+}
+
+.property-category-section {
+  min-width: 0;
+}
+
+.property-category-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.property-category-heading .eyebrow {
+  margin-bottom: 0.3rem;
+}
+
+.property-category-heading h3 {
+  margin: 0;
+  color: var(--wl-ink);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  line-height: 1.05;
+}
+
+.property-category-count {
+  flex: 0 0 auto;
+  padding-bottom: 0.25rem;
+  color: var(--wl-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.property-category-rail {
+  display: flex;
+  gap: 18px;
+  padding: 3px 2px 18px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.property-category-rail .property-card {
+  flex: 0 0 clamp(310px, 29vw, 400px);
+  min-height: 0;
+  scroll-snap-align: start;
+}
+
+@media (min-width: 1181px) {
+  .home-page .search-card,
+  .home-page .search-card.villa-search {
+    max-width: 1540px;
+    grid-template-columns:
+      minmax(180px, 1.25fr)
+      minmax(145px, 0.9fr)
+      minmax(145px, 0.9fr)
+      minmax(130px, 0.75fr)
+      minmax(130px, 0.75fr)
+      minmax(235px, 1.1fr)
+      auto;
+  }
+}
+
+@media (min-width: 821px) and (max-width: 1180px) {
+  .home-page .search-card,
+  .home-page .search-card.villa-search {
+    bottom: 20px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .home-page .search-destination {
+    grid-column: span 2;
+  }
+
+  .home-page .search-guest-group {
+    grid-column: span 2;
+  }
+
+  .home-page .search-button {
+    grid-column: span 2;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 820px) {
+  .home-page .search-taxonomy {
+    grid-column: span 1;
+  }
+
+  .property-category-sections {
+    gap: 38px;
+  }
+
+  .property-category-heading {
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .property-category-heading h3 {
+    font-size: clamp(1.65rem, 7.8vw, 2.35rem);
+  }
+
+  .property-category-count {
+    display: none;
+  }
+
+  .property-category-rail {
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+
+  .property-category-rail .property-card {
+    flex-basis: min(84vw, 350px);
+  }
+}
+
+@media (max-width: 480px) {
+  .home-page .search-taxonomy {
+    grid-column: 1 / -1;
+  }
+
+  .property-category-rail {
+    margin-inline: -16px;
+  }
+}
