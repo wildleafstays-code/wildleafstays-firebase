@@ -123,7 +123,8 @@ export class PublicCatalogRepository {
     destination: string | null,
     categoryId: string | null,
     typeId: string | null,
-    limit: number
+    limit: number,
+    offset: number
   ): Promise<PublicPropertyRecord[]> {
     let query = db
       .selectFrom("properties as p")
@@ -179,9 +180,13 @@ export class PublicCatalogRepository {
       );
     }
 
-    return query.orderBy("p.city").orderBy("p.name").limit(limit).execute() as Promise<
-      PublicPropertyRecord[]
-    >;
+    return query
+      .orderBy("p.city")
+      .orderBy("p.name")
+      .orderBy("p.id")
+      .limit(limit)
+      .offset(offset)
+      .execute() as Promise<PublicPropertyRecord[]>;
   }
 
   async findPropertyBySlug(
