@@ -100,13 +100,24 @@
             </button>
           </div>
 
-          <div class="stay-mode-switch" role="tablist" aria-label="Stay type">
+          <div class="stay-mode-switch" role="tablist" aria-label="Booking style">
             <button
-              id="modeHotel"
+              id="modeAll"
               class="stay-mode-button active"
               type="button"
               role="tab"
               aria-selected="true"
+              data-mode="all"
+            >
+              <span class="mode-icon" aria-hidden="true">⌘</span>
+              <span><strong>All stays</strong><small>Browse every category</small></span>
+            </button>
+            <button
+              id="modeHotel"
+              class="stay-mode-button"
+              type="button"
+              role="tab"
+              aria-selected="false"
               data-mode="hotel"
             >
               <span class="mode-icon" aria-hidden="true">▦</span>
