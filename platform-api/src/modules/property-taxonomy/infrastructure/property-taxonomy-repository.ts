@@ -37,7 +37,9 @@ export class PropertyTaxonomyRepository {
       .execute();
   }
 
-  async listPublicCategories(db: DbExecutor): Promise<PublicPropertyCategoryRecord[]> {
+  async listPublicCategories(
+    db: DbExecutor
+  ): Promise<PublicPropertyCategoryRecord[]> {
     return db
       .selectFrom("property_categories as category")
       .leftJoin("properties as property", (join) =>
@@ -69,7 +71,11 @@ export class PropertyTaxonomyRepository {
   async listPublicTypes(db: DbExecutor): Promise<PublicPropertyTypeRecord[]> {
     return db
       .selectFrom("property_types as type")
-      .innerJoin("property_categories as category", "category.id", "type.property_category_id")
+      .innerJoin(
+        "property_categories as category",
+        "category.id",
+        "type.property_category_id"
+      )
       .leftJoin("properties as property", (join) =>
         join
           .onRef("property.property_type_id", "=", "type.id")
@@ -97,7 +103,10 @@ export class PropertyTaxonomyRepository {
       .execute() as Promise<PublicPropertyTypeRecord[]>;
   }
 
-  async findCategory(db: DbExecutor, id: string): Promise<PropertyCategoryRecord | undefined> {
+  async findCategory(
+    db: DbExecutor,
+    id: string
+  ): Promise<PropertyCategoryRecord | undefined> {
     return db
       .selectFrom("property_categories")
       .selectAll()
@@ -106,7 +115,11 @@ export class PropertyTaxonomyRepository {
   }
 
   async findType(db: DbExecutor, id: string): Promise<PropertyTypeRecord | undefined> {
-    return db.selectFrom("property_types").selectAll().where("id", "=", id).executeTakeFirst();
+    return db
+      .selectFrom("property_types")
+      .selectAll()
+      .where("id", "=", id)
+      .executeTakeFirst();
   }
 
   async findCategoryByCode(
@@ -120,7 +133,10 @@ export class PropertyTaxonomyRepository {
       .executeTakeFirst();
   }
 
-  async findTypeByCode(db: DbExecutor, code: string): Promise<PropertyTypeRecord | undefined> {
+  async findTypeByCode(
+    db: DbExecutor,
+    code: string
+  ): Promise<PropertyTypeRecord | undefined> {
     return db
       .selectFrom("property_types")
       .selectAll()
