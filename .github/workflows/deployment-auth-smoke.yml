@@ -1,0 +1,95 @@
+name: Deployment Auth Smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/deployment-auth-smoke.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deployment-auth-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  workflow-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Confirm smoke test is read-only
+        run: |
+          forbidden=(
+            "gcloud run de""ploy"
+            "update-tra""ffic"
+            "jobs de""ploy"
+            "firebase.*de""ploy"
+            "gcloud builds sub""mit"
+          )
+
+          for pattern in "${forbidden[@]}"; do
+            if grep -E "$pattern" .github/workflows/deployment-auth-smoke.yml; then
+              echo "Forbidden production command found in read-only smoke workflow: $pattern"
+              exit 1
+            fi
+          done
+
+  auth-smoke:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      PROJECT_ID: wildleafstays-web
+      REGION: asia-south1
+      SERVICE: wildleaf-platform-api
+      WIF_PROVIDER: projects/63965798517/locations/global/workloadIdentityPools/github-actions/providers/wildleaf-prod
+      DEPLOYER_SERVICE_ACCOUNT: wildleaf-github-deployer@wildleafstays-web.iam.gserviceaccount.com
+      FIREBASE_TOOLS_VERSION: "15.23.0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Authenticate to Google Cloud using GitHub OIDC
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Read Cloud Run production service
+        run: |
+          gcloud run services describe "$SERVICE" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --format="value(status.url)"
+
+      - name: Read latest Cloud Build
+        run: |
+          gcloud builds list \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --limit=1 \
+            --format="value(id,status)"
+
+      - name: Read Firebase Hosting sites
+        run: |
+          npx --yes "firebase-tools@$FIREBASE_TOOLS_VERSION" hosting:sites:list \
+            --project "$PROJECT_ID" \
+            --non-interactive
