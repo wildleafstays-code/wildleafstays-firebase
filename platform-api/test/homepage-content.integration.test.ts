@@ -217,7 +217,9 @@ describe("homepage content manager", () => {
 
     try {
       const publicView = await service.getPublicHomepage(db);
-      expect(publicView.heroSlides.find((slide) => slide.id === created.heroSlide.id)).toMatchObject({
+      expect(
+        publicView.heroSlides.find((slide) => slide.id === created.heroSlide.id)
+      ).toMatchObject({
         headline: "",
         subtitle: null,
         offerLabel: null,
