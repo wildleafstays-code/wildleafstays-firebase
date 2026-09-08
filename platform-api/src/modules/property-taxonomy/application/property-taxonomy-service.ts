@@ -260,7 +260,7 @@ export class PropertyTaxonomyService {
     db: Kysely<Database> | Transaction<Database>,
     categoryId: string,
     typeId: string
-  ): Promise<void> {
+  ): Promise<{ legacyPropertyType: string }> {
     const [category, propertyType] = await Promise.all([
       this.repository.findCategory(db, categoryId),
       this.repository.findType(db, typeId)
@@ -275,5 +275,18 @@ export class PropertyTaxonomyService {
     ) {
       throw new ValidationError("Select a Property Type belonging to the chosen Property Category");
     }
+
+    const legacyPropertyType =
+      {
+        HOTEL: "HOTEL",
+        RESORT: "RESORT",
+        VILLA: "VILLA",
+        HOMESTAY: "HOMESTAY",
+        COTTAGE_CLUSTER: "COTTAGE_CLUSTER",
+        SERVICED_APARTMENT: "APARTMENT",
+        HOSTEL: "HOSTEL"
+      }[propertyType.code] ?? "OTHER";
+
+    return { legacyPropertyType };
   }
 }
