@@ -39,11 +39,7 @@ export class CreatePropertyDraftService {
       input.propertyTypeId
     );
 
-    const property = await this.repository.createDraft(
-      trx,
-      input,
-      taxonomy.legacyPropertyType
-    );
+    const property = await this.repository.createDraft(trx, input, taxonomy.legacyPropertyType);
 
     const audit = new AuditService(trx);
     await audit.record({
