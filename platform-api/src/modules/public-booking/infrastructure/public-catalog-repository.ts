@@ -128,7 +128,11 @@ export class PublicCatalogRepository {
   ): Promise<PublicPropertyRecord[]> {
     let query = db
       .selectFrom("properties as p")
-      .leftJoin("property_categories as taxonomy_category", "taxonomy_category.id", "p.property_category_id")
+      .leftJoin(
+        "property_categories as taxonomy_category",
+        "taxonomy_category.id",
+        "p.property_category_id"
+      )
       .leftJoin("property_types as taxonomy_type", "taxonomy_type.id", "p.property_type_id")
       .leftJoin("property_media as cover", (join) =>
         join
@@ -195,7 +199,11 @@ export class PublicCatalogRepository {
   ): Promise<PublicPropertyRecord | undefined> {
     return db
       .selectFrom("properties as p")
-      .leftJoin("property_categories as taxonomy_category", "taxonomy_category.id", "p.property_category_id")
+      .leftJoin(
+        "property_categories as taxonomy_category",
+        "taxonomy_category.id",
+        "p.property_category_id"
+      )
       .leftJoin("property_types as taxonomy_type", "taxonomy_type.id", "p.property_type_id")
       .leftJoin("property_media as cover", (join) =>
         join
