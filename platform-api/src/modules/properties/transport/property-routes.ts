@@ -13,7 +13,7 @@ import { GetPropertyService } from "../application/get-property-service.js";
 import { ListPropertiesService } from "../application/list-properties-service.js";
 import { OwnerResponsibilityService } from "../application/owner-responsibility-service.js";
 import { SavePropertyProfileService } from "../application/save-property-profile-service.js";
-import type { PropertyType, SaleMode } from "../domain/property-profile.js";
+import type { SaleMode } from "../domain/property-profile.js";
 
 export interface PropertyRouteDependencies {
   db: Kysely<Database>;
@@ -33,13 +33,16 @@ interface PropertyParams extends OrganizationParams {
 interface CreatePropertyBody extends JsonObject {
   name: string;
   timezone?: string;
+  propertyCategoryId: string;
+  propertyTypeId: string;
 }
 
 interface SavePropertyProfileBody extends JsonObject {
   version: number;
   name: string;
   timezone: string;
-  propertyType?: PropertyType;
+  propertyCategoryId: string;
+  propertyTypeId: string;
   saleMode?: SaleMode;
   shortDescription?: string;
   description?: string;
@@ -114,7 +117,8 @@ const propertySchema = {
     "status",
     "timezone",
     "version",
-    "propertyType",
+    "propertyCategoryId",
+    "propertyTypeId",
     "saleMode",
     "shortDescription",
     "description",
@@ -142,7 +146,8 @@ const propertySchema = {
     status: { type: "string" },
     timezone: { type: "string" },
     version: { type: "integer", minimum: 1 },
-    propertyType: nullableString,
+    propertyCategoryId: nullableString,
+    propertyTypeId: nullableString,
     saleMode: nullableString,
     shortDescription: nullableString,
     description: nullableString,
@@ -176,34 +181,25 @@ const propertyEnvelopeSchema = {
 const createPropertyBodySchema = {
   type: "object",
   additionalProperties: false,
-  required: ["name"],
+  required: ["name", "propertyCategoryId", "propertyTypeId"],
   properties: {
     name: { type: "string", minLength: 2, maxLength: 200 },
-    timezone: { type: "string", minLength: 1, maxLength: 100, default: "Asia/Kolkata" }
+    timezone: { type: "string", minLength: 1, maxLength: 100, default: "Asia/Kolkata" },
+    propertyCategoryId: { type: "string", format: "uuid" },
+    propertyTypeId: { type: "string", format: "uuid" }
   }
 } as const;
 
 const saveProfileBodySchema = {
   type: "object",
   additionalProperties: false,
-  required: ["version", "name", "timezone"],
+  required: ["version", "name", "timezone", "propertyCategoryId", "propertyTypeId"],
   properties: {
     version: { type: "integer", minimum: 1 },
     name: { type: "string", minLength: 2, maxLength: 200 },
     timezone: { type: "string", minLength: 1, maxLength: 100 },
-    propertyType: {
-      type: "string",
-      enum: [
-        "HOTEL",
-        "RESORT",
-        "VILLA",
-        "HOMESTAY",
-        "COTTAGE_CLUSTER",
-        "APARTMENT",
-        "HOSTEL",
-        "OTHER"
-      ]
-    },
+    propertyCategoryId: { type: "string", format: "uuid" },
+    propertyTypeId: { type: "string", format: "uuid" },
     saleMode: {
       type: "string",
       enum: ["ROOMS_ONLY", "FULL_PROPERTY_ONLY", "BOTH"]
@@ -288,7 +284,9 @@ export async function registerPropertyRoutes(
             {
               organizationId: request.params.organizationId,
               name: body.name.trim(),
-              timezone: body.timezone ?? "Asia/Kolkata"
+              timezone: body.timezone ?? "Asia/Kolkata",
+              propertyCategoryId: body.propertyCategoryId,
+              propertyTypeId: body.propertyTypeId
             },
             requestMetadata(request, "partner-api")
           )
@@ -470,7 +468,8 @@ export async function registerPropertyRoutes(
               expectedVersion: body.version,
               name: body.name.trim(),
               timezone: body.timezone,
-              propertyType: body.propertyType ?? null,
+              propertyCategoryId: body.propertyCategoryId,
+              propertyTypeId: body.propertyTypeId,
               saleMode: body.saleMode ?? null,
               shortDescription: body.shortDescription?.trim() || null,
               description: body.description?.trim() || null,
