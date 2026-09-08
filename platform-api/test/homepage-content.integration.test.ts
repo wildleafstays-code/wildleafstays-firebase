@@ -228,10 +228,7 @@ describe("homepage content manager", () => {
         imageId: created.heroSlide.id
       });
     } finally {
-      await db
-        .deleteFrom("homepage_hero_slides")
-        .where("id", "=", created.heroSlide.id)
-        .execute();
+      await db.deleteFrom("homepage_hero_slides").where("id", "=", created.heroSlide.id).execute();
     }
   });
 
