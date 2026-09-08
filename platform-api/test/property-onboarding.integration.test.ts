@@ -24,6 +24,25 @@ function requestMetadata() {
   };
 }
 
+async function taxonomyPair(typeCode = "RESORT"): Promise<{
+  propertyCategoryId: string;
+  propertyTypeId: string;
+}> {
+  const row = await db
+    .selectFrom("property_types as type")
+    .innerJoin("property_categories as category", "category.id", "type.property_category_id")
+    .select(["category.id as category_id", "type.id as type_id"])
+    .where("type.code", "=", typeCode)
+    .where("type.status", "=", "ACTIVE")
+    .where("category.status", "=", "ACTIVE")
+    .executeTakeFirstOrThrow();
+
+  return {
+    propertyCategoryId: row.category_id,
+    propertyTypeId: row.type_id
+  };
+}
+
 async function createOwnerFixture(): Promise<{
   actor: ActorContext;
   organizationId: string;
@@ -94,7 +113,8 @@ describe("property onboarding foundation", () => {
         {
           organizationId: fixture.organizationId,
           name: "Fernwood Test Resort",
-          timezone: "Asia/Kolkata"
+          timezone: "Asia/Kolkata",
+          ...(await taxonomyPair("RESORT"))
         },
         requestMetadata()
       );
@@ -136,11 +156,14 @@ describe("property onboarding foundation", () => {
         {
           organizationId: fixture.organizationId,
           name: "Draft Villa",
-          timezone: "Asia/Kolkata"
+          timezone: "Asia/Kolkata",
+          ...(await taxonomyPair("VILLA"))
         },
         requestMetadata()
       );
     });
+
+    const resortTaxonomy = await taxonomyPair("RESORT");
 
     const saved = await db.transaction().execute(async (trx) => {
       const service = new SavePropertyProfileService();
@@ -153,7 +176,7 @@ describe("property onboarding foundation", () => {
           expectedVersion: 1,
           name: "Wildleaf Fernwood",
           timezone: "Asia/Kolkata",
-          propertyType: "RESORT",
+          ...resortTaxonomy,
           saleMode: "BOTH",
           shortDescription: "A garden resort in the hills.",
           description: "Phase 2 integration property.",
@@ -176,7 +199,8 @@ describe("property onboarding foundation", () => {
     });
 
     expect(saved.property.version).toBe(2);
-    expect(saved.property.propertyType).toBe("RESORT");
+    expect(saved.property.propertyCategoryId).toBe(resortTaxonomy.propertyCategoryId);
+    expect(saved.property.propertyTypeId).toBe(resortTaxonomy.propertyTypeId);
     expect(saved.property.saleMode).toBe("BOTH");
     expect(saved.property.city).toBe("Chail");
   });
@@ -192,20 +216,22 @@ describe("property onboarding foundation", () => {
         {
           organizationId: fixture.organizationId,
           name: "Concurrency Test",
-          timezone: "Asia/Kolkata"
+          timezone: "Asia/Kolkata",
+          ...(await taxonomyPair("VILLA"))
         },
         requestMetadata()
       );
     });
 
     const service = new SavePropertyProfileService();
+    const villaTaxonomy = await taxonomyPair("VILLA");
     const input = {
       organizationId: fixture.organizationId,
       propertyId: created.property.id,
       expectedVersion: 1,
       name: "Concurrency Test",
       timezone: "Asia/Kolkata",
-      propertyType: "VILLA" as const,
+      ...villaTaxonomy,
       saleMode: "FULL_PROPERTY_ONLY" as const,
       shortDescription: null,
       description: null,
@@ -248,7 +274,8 @@ describe("property onboarding foundation", () => {
           {
             organizationId: fixtureB.organizationId,
             name: "Forbidden Property",
-            timezone: "Asia/Kolkata"
+            timezone: "Asia/Kolkata",
+            ...(await taxonomyPair("RESORT"))
           },
           requestMetadata()
         );
