@@ -70,7 +70,7 @@ export class SavePropertyProfileService {
 
     await assertOwnerPropertyEditable(trx, before);
 
-    await this.taxonomy.assertSelectablePair(
+    const taxonomy = await this.taxonomy.assertSelectablePair(
       trx,
       input.propertyCategoryId,
       input.propertyTypeId
@@ -84,7 +84,11 @@ export class SavePropertyProfileService {
       });
     }
 
-    const after = await this.repository.saveProfile(trx, input);
+    const after = await this.repository.saveProfile(
+      trx,
+      input,
+      taxonomy.legacyPropertyType
+    );
     if (!after) {
       throw new ConflictError("Property was changed while this request was being processed", {
         propertyId: input.propertyId,
