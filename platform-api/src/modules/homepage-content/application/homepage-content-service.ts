@@ -103,7 +103,7 @@ function normalizeHeroInput(input: CreateHeroSlideInput): CreateHeroSlideInput {
   const { ctaLabel, ctaHref } = normalizedCta(input.ctaLabel, input.ctaHref);
   validateSchedule(input.startsAt, input.endsAt);
   return {
-    headline: trimmed(input.headline, "Headline", 160),
+    headline: optionalText(input.headline, "Headline", 160) ?? "",
     subtitle: optionalText(input.subtitle, "Subtitle", 300),
     offerLabel: optionalText(input.offerLabel, "Offer label", 80),
     ctaLabel,
