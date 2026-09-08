@@ -5490,7 +5490,7 @@ function renderPropertyTaxonomyManager() {
       textElement(
         "small",
         "muted",
-        `${Number(category.propertyCount || 0)} live ${Number(category.propertyCount || 0) === 1 ? "property" : "properties"} · version ${category.version}`,
+        `Order ${category.sortOrder} · version ${category.version}`,
       ),
     );
 
