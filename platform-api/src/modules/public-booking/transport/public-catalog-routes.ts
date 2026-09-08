@@ -42,6 +42,8 @@ export interface PublicCatalogRouteDependencies {
 
 interface PublicPropertiesQuery {
   destination?: string;
+  categoryId?: string;
+  typeId?: string;
   limit?: number;
 }
 
@@ -91,7 +93,10 @@ const propertySummarySchema = {
   required: [
     "publicSlug",
     "name",
-    "propertyType",
+    "propertyCategoryId",
+    "propertyCategoryName",
+    "propertyTypeId",
+    "propertyTypeName",
     "saleMode",
     "shortDescription",
     "locality",
@@ -103,7 +108,10 @@ const propertySummarySchema = {
   properties: {
     publicSlug: { type: "string" },
     name: { type: "string" },
-    propertyType: nullableString,
+    propertyCategoryId: nullableUuid,
+    propertyCategoryName: nullableString,
+    propertyTypeId: nullableUuid,
+    propertyTypeName: nullableString,
     saleMode: nullableString,
     shortDescription: nullableString,
     locality: nullableString,
@@ -1256,6 +1264,8 @@ export async function registerPublicCatalogRoutes(
               maxLength: 150,
               pattern: ".*\\S.*"
             },
+            categoryId: { type: "string", format: "uuid" },
+            typeId: { type: "string", format: "uuid" },
             limit: {
               type: "integer",
               minimum: 1,
@@ -1282,6 +1292,10 @@ export async function registerPublicCatalogRoutes(
         ...(request.query.destination === undefined
           ? {}
           : { destination: request.query.destination }),
+        ...(request.query.categoryId === undefined
+          ? {}
+          : { categoryId: request.query.categoryId }),
+        ...(request.query.typeId === undefined ? {} : { typeId: request.query.typeId }),
         limit: request.query.limit ?? 50
       });
     }
