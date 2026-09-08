@@ -1,16 +1,3 @@
-export const PropertyTypes = {
-  HOTEL: "HOTEL",
-  RESORT: "RESORT",
-  VILLA: "VILLA",
-  HOMESTAY: "HOMESTAY",
-  COTTAGE_CLUSTER: "COTTAGE_CLUSTER",
-  APARTMENT: "APARTMENT",
-  HOSTEL: "HOSTEL",
-  OTHER: "OTHER"
-} as const;
-
-export type PropertyType = (typeof PropertyTypes)[keyof typeof PropertyTypes];
-
 export const SaleModes = {
   ROOMS_ONLY: "ROOMS_ONLY",
   FULL_PROPERTY_ONLY: "FULL_PROPERTY_ONLY",
@@ -23,6 +10,8 @@ export interface CreatePropertyDraftInput {
   organizationId: string;
   name: string;
   timezone: string;
+  propertyCategoryId: string;
+  propertyTypeId: string;
 }
 
 export interface SavePropertyProfileInput {
@@ -31,7 +20,8 @@ export interface SavePropertyProfileInput {
   expectedVersion: number;
   name: string;
   timezone: string;
-  propertyType: PropertyType | null;
+  propertyCategoryId: string;
+  propertyTypeId: string;
   saleMode: SaleMode | null;
   shortDescription: string | null;
   description: string | null;
