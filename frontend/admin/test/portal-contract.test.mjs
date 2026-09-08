@@ -134,7 +134,7 @@ test("the portal uses canonical v1 APIs and never restores the legacy admin or s
 test("homepage hero metadata is optional and save actions are acknowledged", () => {
   assert.match(
     html,
-    /Headline\s*<span class="optional">optional<\/span>[\s\S]*?name="headline" maxlength="160" \/>/,
+    /Headline\s*<span class="optional">optional<\/span>[\s\S]*?<input[\s\S]*?name="headline"[\s\S]*?maxlength="160"[\s\S]*?\/>/,
   );
   assert.match(
     html,
