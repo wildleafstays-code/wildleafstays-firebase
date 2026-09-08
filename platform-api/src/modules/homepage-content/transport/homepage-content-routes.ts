@@ -37,7 +37,7 @@ interface HomepageItemParams {
 }
 
 interface HeroCreateQuery {
-  headline: string;
+  headline?: string;
   subtitle?: string;
   offerLabel?: string;
   ctaLabel?: string;
@@ -142,9 +142,8 @@ const managedUploadHeaders = {
 const heroCreateQuerySchema = {
   type: "object",
   additionalProperties: false,
-  required: ["headline"],
   properties: {
-    headline: { type: "string", minLength: 1, maxLength: 160 },
+    headline: { type: "string", maxLength: 160 },
     subtitle: { type: "string", maxLength: 300 },
     offerLabel: { type: "string", maxLength: 80 },
     ctaLabel: { type: "string", maxLength: 60 },
@@ -178,7 +177,7 @@ const heroUpdateBodySchema = {
     "version"
   ],
   properties: {
-    headline: { type: "string", minLength: 1, maxLength: 160 },
+    headline: { type: "string", maxLength: 160 },
     subtitle: nullableString,
     offerLabel: nullableString,
     ctaLabel: nullableString,
@@ -439,7 +438,7 @@ export async function registerHomepageContentRoutes(
       }
 
       const input = {
-        headline: request.query.headline,
+        headline: request.query.headline ?? "",
         subtitle: request.query.subtitle ?? null,
         offerLabel: request.query.offerLabel ?? null,
         ctaLabel: request.query.ctaLabel ?? null,
@@ -458,7 +457,7 @@ export async function registerHomepageContentRoutes(
           scopeKey: `homepage.hero.create:user:${actor.userId}`,
           key,
           requestBody: {
-            headline: request.query.headline,
+            headline: request.query.headline ?? "",
             subtitle: request.query.subtitle ?? null,
             offerLabel: request.query.offerLabel ?? null,
             ctaLabel: request.query.ctaLabel ?? null,
