@@ -131,6 +131,21 @@ test("the portal uses canonical v1 APIs and never restores the legacy admin or s
   );
 });
 
+test("homepage hero metadata is optional and save actions are acknowledged", () => {
+  assert.match(
+    html,
+    /Headline\s*<span class="optional">optional<\/span>[\s\S]*?name="headline" maxlength="160" \/>/,
+  );
+  assert.match(
+    html,
+    /Display order\s*<span class="optional">optional<\/span>[\s\S]*?name="sortOrder"[^>]*value="0" \/>/,
+  );
+  assert.match(source, /function homepageNumberOrDefault\(value, fallback\)/);
+  assert.match(source, /function showHomepageAcknowledgement\(message\)/);
+  assert.match(source, /Homepage hero slide added successfully\./);
+  assert.match(source, /Homepage hero slide saved successfully\./);
+});
+
 test("property draft creation preserves exact-retry idempotency across UI failures", () => {
   assert.match(source, /const pendingPropertyCreateKeys = new Map\(\);/);
   assert.match(source, /const form = event\.currentTarget;/);
