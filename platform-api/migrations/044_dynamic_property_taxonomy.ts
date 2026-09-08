@@ -129,8 +129,11 @@ export async function up(db: Kysely<unknown>): Promise<void> {
 
   await sql`
     alter table properties
-      alter column property_category_id set not null,
-      alter column property_type_id set not null,
+      add constraint properties_property_taxonomy_pair_check
+        check (
+          (property_category_id is null and property_type_id is null)
+          or (property_category_id is not null and property_type_id is not null)
+        ),
       add constraint properties_property_category_fk
         foreign key (property_category_id)
         references property_categories(id) on delete restrict,
@@ -152,6 +155,7 @@ export async function down(db: Kysely<unknown>): Promise<void> {
     alter table properties
       drop constraint if exists properties_property_type_category_fk,
       drop constraint if exists properties_property_category_fk,
+      drop constraint if exists properties_property_taxonomy_pair_check,
       drop column if exists property_type_id,
       drop column if exists property_category_id
   `.execute(db);
