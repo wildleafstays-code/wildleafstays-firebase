@@ -545,7 +545,7 @@
               <h2>Tell us about your business</h2>
             </div>
             <p>
-              One business account can manage multiple hotels. You will be its
+              One business account can manage multiple properties. You will be its
               first owner.
             </p>
           </div>
@@ -601,10 +601,10 @@
             class="card form-grid three-column hidden"
           >
             <div class="span-three">
-              <p class="eyebrow">New hotel</p>
+              <p class="eyebrow">New property</p>
               <h2>Create a property draft</h2>
             </div>
-            <label class="span-two"
+            <label class="span-three"
               >Property name<input
                 name="name"
                 autocomplete="off"
@@ -612,6 +612,18 @@
                 minlength="2"
                 maxlength="200"
             /></label>
+            <label>
+              Property Category
+              <select id="createPropertyCategory" name="propertyCategoryId" required>
+                <option value="">Select category</option>
+              </select>
+            </label>
+            <label>
+              Property Type
+              <select id="createPropertyType" name="propertyTypeId" required disabled>
+                <option value="">Select category first</option>
+              </select>
+            </label>
             <label
               >Timezone<input name="timezone" value="Asia/Kolkata" required
             /></label>
@@ -669,19 +681,18 @@
                   required
                   maxlength="200"
               /></label>
-              <label
-                >Property type<select name="propertyType">
-                  <option value="">Select</option>
-                  <option>HOTEL</option>
-                  <option>RESORT</option>
-                  <option>VILLA</option>
-                  <option>HOMESTAY</option>
-                  <option>COTTAGE_CLUSTER</option>
-                  <option>APARTMENT</option>
-                  <option>HOSTEL</option>
-                  <option>OTHER</option>
-                </select></label
-              >
+              <label>
+                Property Category
+                <select id="profilePropertyCategory" name="propertyCategoryId" required>
+                  <option value="">Select category</option>
+                </select>
+              </label>
+              <label>
+                Property Type
+                <select id="profilePropertyType" name="propertyTypeId" required disabled>
+                  <option value="">Select category first</option>
+                </select>
+              </label>
               <label
                 >How it is sold<select name="saleMode">
                   <option value="">Select</option>
@@ -1670,6 +1681,83 @@
               </form>
 
               <div id="homepageHeroList" class="homepage-content-list"></div>
+            </section>
+
+            <section class="card homepage-manager-card taxonomy-manager-card">
+              <div class="card-heading">
+                <div>
+                  <p class="eyebrow">Property discovery</p>
+                  <h3>Property Categories &amp; Types</h3>
+                  <p class="muted">
+                    These database records control owner property setup, public filters,
+                    homepage category headings, order and visibility. The frontend does not
+                    define category or type names.
+                  </p>
+                </div>
+              </div>
+
+              <div class="taxonomy-admin-grid">
+                <form id="propertyCategoryCreateForm" class="form-grid two-column homepage-content-form">
+                  <div class="span-two">
+                    <h4>Add Property Category</h4>
+                  </div>
+                  <label>
+                    Category name
+                    <input name="name" maxlength="120" required placeholder="Wellness Retreats" />
+                  </label>
+                  <label>
+                    Homepage heading
+                    <input name="homepageHeading" maxlength="160" required placeholder="Wellness Retreats" />
+                  </label>
+                  <label>
+                    Display order
+                    <input name="sortOrder" type="number" min="0" max="10000" value="0" required />
+                  </label>
+                  <label class="check-control">
+                    <input name="homepageVisible" type="checkbox" checked />
+                    Show on homepage when live properties exist
+                  </label>
+                  <label class="check-control span-two">
+                    <input name="enabled" type="checkbox" checked />
+                    Available for property setup and search
+                  </label>
+                  <button class="span-two" type="submit">Add category</button>
+                </form>
+
+                <form id="propertyTypeCreateForm" class="form-grid two-column homepage-content-form">
+                  <div class="span-two">
+                    <h4>Add Property Type</h4>
+                  </div>
+                  <label class="span-two">
+                    Parent Property Category
+                    <select id="taxonomyTypeCategory" name="categoryId" required></select>
+                  </label>
+                  <label>
+                    Property Type name
+                    <input name="name" maxlength="120" required placeholder="Yoga Retreat" />
+                  </label>
+                  <label>
+                    Display order
+                    <input name="sortOrder" type="number" min="0" max="10000" value="0" required />
+                  </label>
+                  <label class="check-control span-two">
+                    <input name="enabled" type="checkbox" checked />
+                    Available for property setup and search
+                  </label>
+                  <button class="span-two" type="submit">Add property type</button>
+                </form>
+              </div>
+
+              <div class="taxonomy-admin-columns">
+                <div>
+                  <h4>Property Categories</h4>
+                  <div id="propertyCategoryAdminList" class="homepage-content-list"></div>
+                </div>
+                <div>
+                  <h4>Property Types</h4>
+                  <div id="propertyTypeAdminList" class="homepage-content-list"></div>
+                </div>
+              </div>
             </section>
 
             <section class="card homepage-manager-card">
