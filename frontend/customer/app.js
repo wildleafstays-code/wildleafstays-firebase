@@ -364,10 +364,14 @@ function renderManagedHero(index) {
   heroImage.style.objectPosition =
     `${slide.focalXPercent}% ${slide.focalYPercent}%`;
 
-  heroEyebrow.textContent = "Wildleaf stays";
-  heroHeadline.textContent = slide.headline;
-  heroSubtitle.textContent =
-    slide.subtitle || "Handpicked stays with live availability and secure booking.";
+  heroEyebrow.textContent = "";
+  heroEyebrow.classList.add("hidden");
+
+  heroHeadline.textContent = slide.headline || "";
+  heroHeadline.classList.toggle("hidden", !slide.headline);
+
+  heroSubtitle.textContent = slide.subtitle || "";
+  heroSubtitle.classList.toggle("hidden", !slide.subtitle);
 
   heroOffer.textContent = slide.offerLabel || "";
   heroOffer.classList.toggle("hidden", !slide.offerLabel);
@@ -391,7 +395,12 @@ function renderHeroDots() {
     const dot = element("button", "hero-dot");
     dot.type = "button";
     dot.setAttribute("role", "tab");
-    dot.setAttribute("aria-label", `Show highlight ${index + 1}: ${slide.headline}`);
+    dot.setAttribute(
+      "aria-label",
+      slide.headline
+        ? `Show highlight ${index + 1}: ${slide.headline}`
+        : `Show highlight ${index + 1}`,
+    );
     dot.addEventListener("click", () => {
       renderManagedHero(index);
       resetHeroTimer();
