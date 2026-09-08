@@ -798,6 +798,33 @@ input[type="file"] {
   color: rgba(255, 255, 255, 0.82);
 }
 
+
+.taxonomy-manager-card {
+  grid-column: 1 / -1;
+}
+
+.taxonomy-admin-grid,
+.taxonomy-admin-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.taxonomy-admin-columns > div {
+  min-width: 0;
+}
+
+.taxonomy-content-item {
+  background: #fff;
+}
+
+@media (max-width: 900px) {
+  .taxonomy-admin-grid,
+  .taxonomy-admin-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 1100px) {
   .homepage-manager-grid {
     grid-template-columns: 1fr;
