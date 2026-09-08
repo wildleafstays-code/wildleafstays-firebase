@@ -167,6 +167,31 @@ export interface OrganizationMembershipsTable {
   updated_at: Generated<Date>;
 }
 
+export interface PropertyCategoriesTable {
+  id: Generated<string>;
+  code: string;
+  name: string;
+  homepage_heading: string;
+  sort_order: Generated<number>;
+  homepage_visible: Generated<boolean>;
+  status: Generated<string>;
+  version: Generated<number>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface PropertyTypesTable {
+  id: Generated<string>;
+  property_category_id: string;
+  code: string;
+  name: string;
+  sort_order: Generated<number>;
+  status: Generated<string>;
+  version: Generated<number>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface PropertiesTable {
   id: Generated<string>;
   organization_id: string;
@@ -174,6 +199,8 @@ export interface PropertiesTable {
   name: string;
   status: string;
   timezone: string;
+  property_category_id: string;
+  property_type_id: string;
   property_type: ColumnType<string | null, string | null | undefined, string | null | undefined>;
   sale_mode: ColumnType<string | null, string | null | undefined, string | null | undefined>;
   short_description: ColumnType<
@@ -554,6 +581,8 @@ export interface Database {
   users: UsersTable;
   organizations: OrganizationsTable;
   organization_memberships: OrganizationMembershipsTable;
+  property_categories: PropertyCategoriesTable;
+  property_types: PropertyTypesTable;
   properties: PropertiesTable;
   property_access_grants: PropertyAccessGrantsTable;
   platform_staff_roles: PlatformStaffRolesTable;
