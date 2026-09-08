@@ -33,13 +33,17 @@ export class CreatePropertyDraftService {
       organizationId: input.organizationId
     });
 
-    await this.taxonomy.assertSelectablePair(
+    const taxonomy = await this.taxonomy.assertSelectablePair(
       trx,
       input.propertyCategoryId,
       input.propertyTypeId
     );
 
-    const property = await this.repository.createDraft(trx, input);
+    const property = await this.repository.createDraft(
+      trx,
+      input,
+      taxonomy.legacyPropertyType
+    );
 
     const audit = new AuditService(trx);
     await audit.record({
