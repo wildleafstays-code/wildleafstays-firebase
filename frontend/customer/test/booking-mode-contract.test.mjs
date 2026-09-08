@@ -20,6 +20,7 @@ const propertySource = await readFile(
 );
 
 test("booking style remains independent from database Property Category", () => {
+  assert.match(homeHtml, /id="modeAll"/);
   assert.match(homeHtml, /id="modeHotel"/);
   assert.match(homeHtml, /id="modeVilla"/);
   assert.match(homeHtml, />Book by room</);
@@ -27,7 +28,9 @@ test("booking style remains independent from database Property Category", () => 
   assert.match(homeSource, /saleModeAllows/);
   assert.match(homeSource, /ROOMS_ONLY/);
   assert.match(homeSource, /FULL_PROPERTY_ONLY/);
-  assert.match(homeSource, /mode: state\.mode/);
+  assert.match(homeSource, /function bookingModeForProperty\(property\)/);
+  assert.match(homeSource, /mode: bookingModeForProperty\(property\)/);
+  assert.match(homeSource, /if \(mode === "all"\) return true/);
 });
 
 test("homepage categories, sliders and filters are generated from database taxonomy", () => {
