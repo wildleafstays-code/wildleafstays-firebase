@@ -8,7 +8,10 @@ export interface PublicDestinationView {
 export interface PublicPropertySummaryView {
   publicSlug: string;
   name: string;
-  propertyType: string | null;
+  propertyCategoryId: string | null;
+  propertyCategoryName: string | null;
+  propertyTypeId: string | null;
+  propertyTypeName: string | null;
   saleMode: string | null;
   shortDescription: string | null;
   locality: string | null;
