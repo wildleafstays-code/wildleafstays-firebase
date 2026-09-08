@@ -51,7 +51,13 @@ export class PublicCatalogService {
 
   async listProperties(
     db: Kysely<Database>,
-    input: { destination?: string; categoryId?: string; typeId?: string; limit: number }
+    input: {
+      destination?: string;
+      categoryId?: string;
+      typeId?: string;
+      limit: number;
+      offset: number;
+    }
   ): Promise<{ properties: PublicPropertySummaryView[] }> {
     const destination = input.destination?.trim() || null;
     const rows = await this.repository.listProperties(
@@ -59,7 +65,8 @@ export class PublicCatalogService {
       destination,
       input.categoryId?.trim() || null,
       input.typeId?.trim() || null,
-      input.limit
+      input.limit,
+      input.offset
     );
     return {
       properties: rows.map(propertySummary)
