@@ -1,0 +1,373 @@
+name: Production Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type DEPLOY to confirm a production release from main"
+        required: true
+        type: string
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wildleaf-production-release
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: wildleafstays-web
+  REGION: asia-south1
+  SERVICE: wildleaf-platform-api
+  IMAGE_REPOSITORY: asia-south1-docker.pkg.dev/wildleafstays-web/wildleaf-platform-api/api
+  RUNTIME_SERVICE_ACCOUNT: wildleaf-platform-api@wildleafstays-web.iam.gserviceaccount.com
+  MIGRATOR_SERVICE_ACCOUNT: wildleaf-platform-migrator@wildleafstays-web.iam.gserviceaccount.com
+  CLOUD_SQL_INSTANCE: wildleafstays-web:asia-south1:wildleaf-v2-prod
+  WIF_PROVIDER: projects/63965798517/locations/global/workloadIdentityPools/github-actions/providers/wildleaf-prod
+  DEPLOYER_SERVICE_ACCOUNT: wildleaf-github-deployer@wildleafstays-web.iam.gserviceaccount.com
+  FIREBASE_TOOLS_VERSION: "15.23.0"
+
+jobs:
+  validate:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.confirm == 'DEPLOY') ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[deploy]'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: wildleaf_test
+          POSTGRES_USER: wildleaf
+          POSTGRES_PASSWORD: wildleaf
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wildleaf -d wildleaf_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://wildleaf:wildleaf@localhost:5432/wildleaf_test
+      FIREBASE_PROJECT_ID: wildleaf-test
+      DB_MAX_CONNECTIONS: 5
+
+    steps:
+      - name: Require main
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Production releases are allowed only from main."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: platform-api/package-lock.json
+
+      - name: Validate Firebase routing contract
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const config = JSON.parse(fs.readFileSync("firebase.json", "utf8"));
+          const rewrites = config?.hosting?.rewrites;
+
+          if (!Array.isArray(rewrites) || rewrites.length !== 3) {
+            throw new Error("firebase.json must keep exactly three hosting rewrites");
+          }
+
+          const [api, v1, spa] = rewrites;
+
+          if (api?.source !== "/api/**" || api?.function !== "api") {
+            throw new Error("Legacy /api/** Firebase Function routing changed unexpectedly");
+          }
+
+          if (
+            v1?.source !== "/v1/**" ||
+            v1?.run?.serviceId !== "wildleaf-platform-api" ||
+            v1?.run?.region !== "asia-south1"
+          ) {
+            throw new Error("Canonical /v1/** Cloud Run routing changed unexpectedly");
+          }
+
+          if (spa?.source !== "**" || spa?.destination !== "/customer/index.html") {
+            throw new Error("Customer SPA fallback routing changed unexpectedly");
+          }
+
+          console.log("Firebase hosting routing contract validated");
+          NODE
+
+      - name: Install backend dependencies
+        working-directory: platform-api
+        run: npm ci
+
+      - name: Production dependency audit
+        working-directory: platform-api
+        run: npm audit --omit=dev --omit=optional
+
+      - name: Apply test migrations
+        working-directory: platform-api
+        run: npm run migrate
+
+      - name: Full backend quality gate
+        working-directory: platform-api
+        run: npm run check:full
+
+      - name: Migration rollback smoke test
+        working-directory: platform-api
+        run: |
+          npm run migrate:down
+          npm run migrate
+
+      - name: Frontend contract tests
+        run: |
+          node --test \
+            frontend/admin/test/portal-contract.test.mjs \
+            frontend/customer/test/booking-mode-contract.test.mjs
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout exact release commit
+        uses: actions/checkout@v6
+
+      - name: Authenticate to Google Cloud without a service-account key
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Prepare release metadata
+        id: release
+        shell: bash
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:12}"
+          TAG="rel-${GITHUB_SHA:0:7}"
+          IMAGE="${IMAGE_REPOSITORY}:${SHORT_SHA}"
+          MIGRATION_JOB="wildleaf-platform-migrate-${SHORT_SHA}"
+
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "migration_job=${MIGRATION_JOB}" >> "$GITHUB_OUTPUT"
+
+      - name: Snapshot and validate current production service
+        id: snapshot
+        shell: bash
+        run: |
+          gcloud run services describe "$SERVICE" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --format=json > /tmp/service.json
+
+          PREVIOUS_REVISION="$(jq -r '[.status.traffic[]? | select(.percent == 100) | .revisionName][0] // empty' /tmp/service.json)"
+          CURRENT_RUNTIME_SA="$(jq -r '.spec.template.spec.serviceAccountName // empty' /tmp/service.json)"
+
+          if [[ -z "$PREVIOUS_REVISION" ]]; then
+            echo "Could not identify the current 100% production revision."
+            exit 1
+          fi
+
+          if [[ "$CURRENT_RUNTIME_SA" != "$RUNTIME_SERVICE_ACCOUNT" ]]; then
+            echo "Unexpected runtime service account: $CURRENT_RUNTIME_SA"
+            exit 1
+          fi
+
+          jq -e --arg instance "$CLOUD_SQL_INSTANCE" \
+            '.spec.template.metadata.annotations["run.googleapis.com/cloudsql-instances"] == $instance' \
+            /tmp/service.json >/dev/null
+
+          jq -e \
+            '.spec.template.spec.containers[0].env[]? | select(.name == "DATABASE_URL")' \
+            /tmp/service.json >/dev/null
+
+          echo "previous_revision=$PREVIOUS_REVISION" >> "$GITHUB_OUTPUT"
+          echo "Current production revision: $PREVIOUS_REVISION"
+
+      - name: Build immutable backend image
+        run: |
+          gcloud builds submit platform-api \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --tag="${{ steps.release.outputs.image }}"
+
+      - name: Apply production migrations with dedicated migrator identity
+        run: |
+          gcloud run jobs deploy "${{ steps.release.outputs.migration_job }}" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --image="${{ steps.release.outputs.image }}" \
+            --service-account="$MIGRATOR_SERVICE_ACCOUNT" \
+            --set-cloudsql-instances="$CLOUD_SQL_INSTANCE" \
+            --set-secrets="DATABASE_URL=MIGRATION_DATABASE_URL:1" \
+            --set-env-vars="NODE_ENV=production,FIREBASE_PROJECT_ID=$PROJECT_ID,DB_MAX_CONNECTIONS=5" \
+            --command="npm" \
+            --args="run,migrate:prod" \
+            --tasks=1 \
+            --max-retries=0 \
+            --execute-now \
+            --wait \
+            --quiet
+
+          gcloud run jobs logs read "${{ steps.release.outputs.migration_job }}" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --limit=50 || true
+
+      - name: Deploy zero-traffic backend candidate
+        id: candidate
+        shell: bash
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --image="${{ steps.release.outputs.image }}" \
+            --no-traffic \
+            --tag="${{ steps.release.outputs.tag }}" \
+            --quiet
+
+          REVISION="$(gcloud run services describe "$SERVICE" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --format='value(status.latestCreatedRevisionName)')"
+
+          BASE_URL="$(gcloud run services describe "$SERVICE" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --format='value(status.url)')"
+
+          CANDIDATE_URL="https://${{ steps.release.outputs.tag }}---${BASE_URL#https://}"
+
+          echo "revision=$REVISION" >> "$GITHUB_OUTPUT"
+          echo "url=$CANDIDATE_URL" >> "$GITHUB_OUTPUT"
+          echo "Candidate revision: $REVISION"
+          echo "Candidate URL: $CANDIDATE_URL"
+
+      - name: Verify candidate API before traffic
+        env:
+          CANDIDATE_URL: ${{ steps.candidate.outputs.url }}
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 \
+            "$CANDIDATE_URL/v1/public/homepage" \
+            -o /tmp/candidate-homepage.json
+
+          node <<'NODE'
+          const fs = require("node:fs");
+          const payload = JSON.parse(fs.readFileSync("/tmp/candidate-homepage.json", "utf8"));
+
+          if (!Array.isArray(payload.heroSlides) || !Array.isArray(payload.destinations)) {
+            throw new Error("Candidate homepage response does not match the public API contract");
+          }
+
+          console.log("Candidate public homepage API verified");
+          NODE
+
+      - name: Cut backend traffic to verified candidate
+        id: cutover
+        run: |
+          gcloud run services update-traffic "$SERVICE" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --to-revisions="${{ steps.candidate.outputs.revision }}=100" \
+            --quiet
+
+      - name: Verify live API after cutover
+        id: live_api
+        continue-on-error: true
+        run: |
+          curl --fail --silent --show-error --retry 8 --retry-delay 3 \
+            "https://www.wildleafstays.com/v1/public/homepage?release=${{ steps.release.outputs.short_sha }}" \
+            -o /tmp/live-homepage.json
+
+          node <<'NODE'
+          const fs = require("node:fs");
+          const payload = JSON.parse(fs.readFileSync("/tmp/live-homepage.json", "utf8"));
+
+          if (!Array.isArray(payload.heroSlides) || !Array.isArray(payload.destinations)) {
+            throw new Error("Live homepage API contract verification failed");
+          }
+
+          console.log("Live API verified after cutover");
+          NODE
+
+      - name: Roll back backend traffic if live API verification failed
+        if: steps.live_api.outcome == 'failure'
+        run: |
+          gcloud run services update-traffic "$SERVICE" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --to-revisions="${{ steps.snapshot.outputs.previous_revision }}=100" \
+            --quiet
+
+      - name: Stop release after backend rollback
+        if: steps.live_api.outcome == 'failure'
+        run: |
+          echo "Live API verification failed. Backend traffic was restored to the previous revision."
+          exit 1
+
+      - name: Deploy Firebase Hosting
+        run: |
+          npx --yes "firebase-tools@$FIREBASE_TOOLS_VERSION" deploy \
+            --only hosting \
+            --project "$PROJECT_ID" \
+            --non-interactive
+
+      - name: Verify live static files match this commit
+        shell: bash
+        run: |
+          CACHE_BUSTER="release=${{ steps.release.outputs.short_sha }}"
+
+          curl --fail --silent --show-error --retry 5 \
+            "https://www.wildleafstays.com/admin/index.html?${CACHE_BUSTER}" \
+            -o /tmp/live-admin-index.html
+          curl --fail --silent --show-error --retry 5 \
+            "https://www.wildleafstays.com/admin/admin.js?${CACHE_BUSTER}" \
+            -o /tmp/live-admin.js
+          curl --fail --silent --show-error --retry 5 \
+            "https://www.wildleafstays.com/customer/app.js?${CACHE_BUSTER}" \
+            -o /tmp/live-customer-app.js
+
+          cmp frontend/admin/index.html /tmp/live-admin-index.html
+          cmp frontend/admin/admin.js /tmp/live-admin.js
+          cmp frontend/customer/app.js /tmp/live-customer-app.js
+
+          echo "Firebase Hosting static files match the release commit"
+
+      - name: Write release summary
+        run: |
+          {
+            echo "## Wildleaf production release"
+            echo ""
+            echo "- Commit: `$GITHUB_SHA`"
+            echo "- Backend revision: `${{ steps.candidate.outputs.revision }}`"
+            echo "- Backend image: `${{ steps.release.outputs.image }}`"
+            echo "- Previous revision retained: `${{ steps.snapshot.outputs.previous_revision }}`"
+            echo "- Candidate API: verified before traffic"
+            echo "- Live API: verified after traffic cutover"
+            echo "- Firebase Hosting: deployed and byte-verified"
+          } >> "$GITHUB_STEP_SUMMARY"
