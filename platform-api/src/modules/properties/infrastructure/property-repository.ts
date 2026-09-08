@@ -20,6 +20,8 @@ export class PropertyRepository {
         name: input.name,
         status: "DRAFT",
         timezone: input.timezone,
+        property_category_id: input.propertyCategoryId,
+        property_type_id: input.propertyTypeId,
         property_type: null,
         sale_mode: null,
         short_description: null,
@@ -74,7 +76,8 @@ export class PropertyRepository {
       .set({
         name: input.name,
         timezone: input.timezone,
-        property_type: input.propertyType,
+        property_category_id: input.propertyCategoryId,
+        property_type_id: input.propertyTypeId,
         sale_mode: input.saleMode,
         short_description: input.shortDescription,
         description: input.description,
