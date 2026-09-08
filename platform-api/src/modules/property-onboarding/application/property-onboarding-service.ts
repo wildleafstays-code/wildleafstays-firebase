@@ -91,7 +91,10 @@ function reviewQueueView(row: PropertyReviewQueueRecord): JsonObject {
     propertyName: row.name,
     status: row.status,
     version: row.version,
-    propertyType: row.property_type,
+    propertyCategoryId: row.property_category_id,
+    propertyCategoryName: row.property_category_name,
+    propertyTypeId: row.property_type_id,
+    propertyTypeName: row.property_type_name,
     saleMode: row.sale_mode,
     city: row.city,
     stateRegion: row.state_region,
@@ -111,6 +114,8 @@ function propertyState(property: PropertyRecord): JsonObject {
     version: property.version,
     submissionSequence: property.submission_sequence,
     publicSlug: property.public_slug,
+    propertyCategoryId: property.property_category_id,
+    propertyTypeId: property.property_type_id,
     submittedAt: property.submitted_at?.toISOString() ?? null,
     approvedAt: property.approved_at?.toISOString() ?? null,
     liveAt: property.live_at?.toISOString() ?? null
@@ -290,7 +295,8 @@ export class PropertyOnboardingService {
 
     const profileComplete = Boolean(
       property.name.trim() &&
-      property.property_type &&
+      property.property_category_id &&
+      property.property_type_id &&
       property.sale_mode &&
       property.city &&
       property.state_region &&
