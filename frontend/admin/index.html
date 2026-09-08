@@ -1597,16 +1597,15 @@
 
               <form id="homepageHeroCreateForm" class="form-grid two-column homepage-content-form">
                 <label class="span-two">
-                  Headline
+                  Headline <span class="optional">optional</span>
                   <input
                     name="headline"
                     maxlength="160"
                     placeholder="The Art of Doing Nothing"
-                    required
                   />
                 </label>
                 <label class="span-two">
-                  Subtitle
+                  Subtitle <span class="optional">optional</span>
                   <input
                     name="subtitle"
                     maxlength="300"
@@ -1614,7 +1613,7 @@
                   />
                 </label>
                 <label>
-                  Offer / banner text
+                  Offer / banner text <span class="optional">optional</span>
                   <input
                     name="offerLabel"
                     maxlength="80"
@@ -1622,15 +1621,15 @@
                   />
                 </label>
                 <label>
-                  Display order
-                  <input name="sortOrder" type="number" min="0" max="10000" value="0" required />
+                  Display order <span class="optional">optional</span>
+                  <input name="sortOrder" type="number" min="0" max="10000" value="0" />
                 </label>
                 <label>
-                  CTA button text
+                  CTA button text <span class="optional">optional</span>
                   <input name="ctaLabel" maxlength="60" placeholder="Explore stays" />
                 </label>
                 <label>
-                  CTA link
+                  CTA link <span class="optional">optional</span>
                   <input name="ctaHref" maxlength="500" placeholder="/customer/#stays" />
                 </label>
                 <label>
@@ -1642,12 +1641,12 @@
                   <input name="endsAt" type="datetime-local" />
                 </label>
                 <label>
-                  Horizontal focal point (%)
-                  <input name="focalXPercent" type="number" min="0" max="100" value="50" required />
+                  Horizontal focal point (%) <span class="optional">optional</span>
+                  <input name="focalXPercent" type="number" min="0" max="100" value="50" />
                 </label>
                 <label>
-                  Vertical focal point (%)
-                  <input name="focalYPercent" type="number" min="0" max="100" value="50" required />
+                  Vertical focal point (%) <span class="optional">optional</span>
+                  <input name="focalYPercent" type="number" min="0" max="100" value="50" />
                 </label>
                 <label class="span-two">
                   Hero image
@@ -1660,7 +1659,7 @@
                   <small>JPEG, PNG, WebP or AVIF. Maximum 8 MB.</small>
                 </label>
                 <label class="span-two">
-                  Image description
+                  Image description <span class="optional">optional</span>
                   <input name="altText" maxlength="500" placeholder="Guests relaxing beside a pool" />
                 </label>
                 <label class="check-control span-two">
