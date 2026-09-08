@@ -26,7 +26,20 @@ jobs:
 
       - name: Confirm smoke test is read-only
         run: |
-          ! grep -E "gcloud run deploy|update-traffic|jobs deploy|firebase.*deploy|gcloud builds submit" .github/workflows/deployment-auth-smoke.yml
+          forbidden=(
+            "gcloud run de""ploy"
+            "update-tra""ffic"
+            "jobs de""ploy"
+            "firebase.*de""ploy"
+            "gcloud builds sub""mit"
+          )
+
+          for pattern in "${forbidden[@]}"; do
+            if grep -E "$pattern" .github/workflows/deployment-auth-smoke.yml; then
+              echo "Forbidden production command found in read-only smoke workflow: $pattern"
+              exit 1
+            fi
+          done
 
   auth-smoke:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
