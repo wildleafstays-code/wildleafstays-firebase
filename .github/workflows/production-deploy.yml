@@ -229,11 +229,43 @@ jobs:
 
       - name: Build immutable backend image
         run: |
-          gcloud builds submit platform-api \
+          BUILD_ID="$(gcloud builds submit platform-api \
             --project="$PROJECT_ID" \
             --region="$REGION" \
             --tag="${{ steps.release.outputs.image }}" \
-            --suppress-logs
+            --async \
+            --format="value(id)")"
+
+          if [[ -z "$BUILD_ID" ]]; then
+            echo "Cloud Build submission did not return a build ID."
+            exit 1
+          fi
+
+          echo "Cloud Build: $BUILD_ID"
+
+          for attempt in {1..180}; do
+            STATUS="$(gcloud builds describe "$BUILD_ID" \
+              --project="$PROJECT_ID" \
+              --region="$REGION" \
+              --format="value(status)")"
+
+            echo "Cloud Build status: $STATUS"
+
+            case "$STATUS" in
+              SUCCESS)
+                exit 0
+                ;;
+              FAILURE|TIMEOUT|CANCELLED|EXPIRED|INTERNAL_ERROR)
+                echo "Cloud Build failed with status: $STATUS"
+                exit 1
+                ;;
+            esac
+
+            sleep 5
+          done
+
+          echo "Timed out waiting for Cloud Build."
+          exit 1
 
       - name: Apply production migrations with dedicated migrator identity
         run: |
