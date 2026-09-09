@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Browse Wildleaf entire-property stays by destination, category, and property type."
+    />
+    <title>Entire Property Stays | Wildleaf Stays</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/customer/styles.css" />
+    <link rel="stylesheet" href="/customer/experience.css" />
+    <link rel="stylesheet" href="/customer/entire-properties.css" />
+  </head>
+  <body class="catalog-page entire-properties-page">
+    <header class="site-header catalog-header">
+      <a class="brand" href="/customer/" aria-label="Wildleaf Stays home">
+        <span class="brand-mark" aria-hidden="true">W</span>
+        <span><strong>Wildleaf</strong><small>STAYS</small></span>
+      </a>
+
+      <nav class="site-nav desktop-nav" aria-label="Primary navigation">
+        <a href="/customer/">Home</a>
+        <a href="/customer/#destinations">Destinations</a>
+        <a href="/customer/#stays">Stay categories</a>
+        <a href="/customer/#contact">Contact</a>
+      </nav>
+
+      <details class="mobile-menu">
+        <summary aria-label="Open navigation menu">☰</summary>
+        <nav aria-label="Mobile navigation">
+          <a href="/customer/">Home</a>
+          <a href="/customer/#destinations">Destinations</a>
+          <a href="/customer/#stays">Stay categories</a>
+          <a href="/customer/#contact">Contact</a>
+        </nav>
+      </details>
+    </header>
+
+    <main>
+      <section class="catalog-intro" aria-labelledby="catalogTitle">
+        <a class="catalog-back-link" href="/customer/">← Back to Wildleaf</a>
+        <p class="eyebrow">Entire property</p>
+        <h1 id="catalogTitle">A place entirely your own.</h1>
+        <p>
+          Browse private-use Wildleaf stays by destination. Every location and
+          property shown here comes from the live owner catalogue.
+        </p>
+      </section>
+
+      <section class="catalog-filter-shell" aria-label="Find an entire-property stay">
+        <form id="entirePropertyFilters" class="catalog-filter-form">
+          <label class="catalog-field catalog-query-field">
+            <span>Search</span>
+            <input
+              id="catalogQuery"
+              name="q"
+              type="search"
+              placeholder="Property, locality, or destination"
+              autocomplete="off"
+            />
+          </label>
+
+          <label class="catalog-field">
+            <span>Destination</span>
+            <select id="catalogDestination" name="destination">
+              <option value="">All destinations</option>
+            </select>
+          </label>
+
+          <label class="catalog-field">
+            <span>Property Category</span>
+            <select id="catalogCategory" name="categoryId">
+              <option value="">All categories</option>
+            </select>
+          </label>
+
+          <label class="catalog-field">
+            <span>Property Type</span>
+            <select id="catalogType" name="typeId" disabled>
+              <option value="">All property types</option>
+            </select>
+          </label>
+
+          <button class="button button-primary catalog-search-button" type="submit">
+            Search
+          </button>
+          <button id="catalogReset" class="catalog-reset-button" type="button">
+            Clear
+          </button>
+        </form>
+      </section>
+
+      <section class="catalog-results-section" aria-labelledby="catalogResultsTitle">
+        <div class="catalog-results-heading">
+          <div>
+            <p class="eyebrow">Browse by destination</p>
+            <h2 id="catalogResultsTitle">Entire-property stays</h2>
+          </div>
+          <p id="catalogStatus" class="catalog-status" role="status">
+            Loading live properties…
+          </p>
+        </div>
+
+        <div id="catalogLocationGroups" class="catalog-location-groups" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <footer id="contact" class="site-footer">
+      <div class="brand footer-brand">
+        <span class="brand-mark" aria-hidden="true">W</span
+        ><span><strong>Wildleaf</strong><small>STAYS</small></span>
+      </div>
+      <p>Thoughtful stays, naturally.</p>
+      <p class="footer-note">
+        Need booking help? Contact the Wildleaf support team.
+      </p>
+    </footer>
+
+    <script src="/customer/config.js"></script>
+    <script type="module" src="/customer/entire-properties.js"></script>
+  </body>
+</html>
