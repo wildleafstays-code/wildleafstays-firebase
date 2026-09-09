@@ -232,7 +232,8 @@ jobs:
           gcloud builds submit platform-api \
             --project="$PROJECT_ID" \
             --region="$REGION" \
-            --tag="${{ steps.release.outputs.image }}"
+            --tag="${{ steps.release.outputs.image }}" \
+            --suppress-logs
 
       - name: Apply production migrations with dedicated migrator identity
         run: |
