@@ -98,6 +98,8 @@ async function createOwnerPropertyFixture(): Promise<{
     ]
   };
 
+  const taxonomy = await resortTaxonomy();
+
   const property = await db.transaction().execute((trx) =>
     new CreatePropertyDraftService().execute(
       trx,
@@ -106,7 +108,7 @@ async function createOwnerPropertyFixture(): Promise<{
         organizationId: organization.organizationId,
         name: `Wildleaf Onboarding ${randomUUID()}`,
         timezone: "Asia/Kolkata",
-        ...(await resortTaxonomy())
+        ...taxonomy
       },
       requestMetadata()
     )
