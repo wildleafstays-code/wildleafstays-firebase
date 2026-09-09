@@ -14,6 +14,11 @@ const homeSource = await readFile(
   new URL("../app.js", import.meta.url),
   "utf8",
 );
+const homeStyles = await readFile(
+  new URL("../experience.css", import.meta.url),
+  "utf8",
+);
+
 const entirePropertyHtml = await readFile(
   new URL("../entire-properties.html", import.meta.url),
   "utf8",
@@ -84,6 +89,28 @@ test("homepage discovery removes redundant heading layers and keeps live categor
   assert.match(homeSource, /\.filter\(\(category\) => category\.enabled\)/);
   assert.doesNotMatch(homeSource, /homepageVisible/);
   assert.match(homeSource, /if \(!categoryProperties\.length\) continue/);
+});
+
+test("homepage sections use subtle alternating surfaces to avoid a monotone scroll", () => {
+  assert.match(homeStyles, /--wl-surface-warm:\s*#f7f2e9/);
+  assert.match(homeStyles, /--wl-surface-sage:\s*#f1f5f0/);
+  assert.match(homeStyles, /--wl-surface-stone:\s*#edf1eb/);
+  assert.match(
+    homeStyles,
+    /\.destination-section\s*\{[\s\S]*background:\s*var\(--wl-surface-warm\)/,
+  );
+  assert.match(
+    homeStyles,
+    /\.property-category-section\s*\{[\s\S]*background:\s*var\(--wl-surface-sage\)/,
+  );
+  assert.match(
+    homeStyles,
+    /\.property-category-section:nth-child\(even\)\s*\{[\s\S]*background:\s*var\(--wl-surface-warm\)/,
+  );
+  assert.match(
+    homeStyles,
+    /\.home-page \.promise-section\s*\{[\s\S]*background:\s*var\(--wl-surface-stone\)/,
+  );
 });
 
 test("Entire Property opens a dedicated live catalogue grouped alphabetically by destination", () => {
