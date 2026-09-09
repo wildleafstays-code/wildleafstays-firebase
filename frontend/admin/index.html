@@ -1683,6 +1683,100 @@
               <div id="homepageHeroList" class="homepage-content-list"></div>
             </section>
 
+            <section class="card homepage-manager-card">
+              <div class="card-heading">
+                <div>
+                  <p class="eyebrow">Entire Property marketing</p>
+                  <h3>Entire Property hero campaigns</h3>
+                  <p class="muted">
+                    Use this page as a dedicated marketing surface for private-use stays.
+                    Headline, subtitle, offer and CTA are optional. When no campaign is
+                    published, guests go straight to search and live properties.
+                  </p>
+                </div>
+              </div>
+
+              <form id="entirePropertyHeroCreateForm" class="form-grid two-column homepage-content-form">
+                <label class="span-two">
+                  Headline <span class="optional">optional</span>
+                  <input
+                    name="headline"
+                    maxlength="160"
+                    placeholder="Take the whole place"
+                  />
+                </label>
+                <label class="span-two">
+                  Subtitle <span class="optional">optional</span>
+                  <input
+                    name="subtitle"
+                    maxlength="300"
+                    placeholder="Private villas, cottages and homes for your group."
+                  />
+                </label>
+                <label>
+                  Offer / banner text <span class="optional">optional</span>
+                  <input
+                    name="offerLabel"
+                    maxlength="80"
+                    placeholder="Stay 3 nights, save 15%"
+                  />
+                </label>
+                <label>
+                  Display order <span class="optional">optional</span>
+                  <input name="sortOrder" type="number" min="0" max="10000" value="0" />
+                </label>
+                <label>
+                  CTA button text <span class="optional">optional</span>
+                  <input name="ctaLabel" maxlength="60" placeholder="Explore entire stays" />
+                </label>
+                <label>
+                  CTA link <span class="optional">optional</span>
+                  <input
+                    name="ctaHref"
+                    maxlength="500"
+                    placeholder="/customer/entire-properties.html#entirePropertyFilters"
+                  />
+                </label>
+                <label>
+                  Starts at <span class="optional">optional</span>
+                  <input name="startsAt" type="datetime-local" />
+                </label>
+                <label>
+                  Ends at <span class="optional">optional</span>
+                  <input name="endsAt" type="datetime-local" />
+                </label>
+                <label>
+                  Horizontal focal point (%) <span class="optional">optional</span>
+                  <input name="focalXPercent" type="number" min="0" max="100" value="50" />
+                </label>
+                <label>
+                  Vertical focal point (%) <span class="optional">optional</span>
+                  <input name="focalYPercent" type="number" min="0" max="100" value="50" />
+                </label>
+                <label class="span-two">
+                  Hero image
+                  <input
+                    name="file"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/avif"
+                    required
+                  />
+                  <small>JPEG, PNG, WebP or AVIF. Maximum 8 MB.</small>
+                </label>
+                <label class="span-two">
+                  Image description <span class="optional">optional</span>
+                  <input name="altText" maxlength="500" placeholder="Private villa in the hills" />
+                </label>
+                <label class="check-control span-two">
+                  <input name="enabled" type="checkbox" checked />
+                  Publish this campaign when its schedule allows
+                </label>
+                <button class="span-two" type="submit">Add Entire Property campaign</button>
+              </form>
+
+              <div id="entirePropertyHeroList" class="homepage-content-list"></div>
+            </section>
+
             <section class="card homepage-manager-card taxonomy-manager-card">
               <div class="card-heading">
                 <div>

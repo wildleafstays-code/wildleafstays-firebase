@@ -1,3 +1,5 @@
+export type HomepageHeroPlacement = "HOME" | "ENTIRE_PROPERTY";
+
 export interface StoredHomepageImage {
   storageProvider: "GCS";
   storageKey: string;
@@ -5,6 +7,7 @@ export interface StoredHomepageImage {
 }
 
 export interface CreateHeroSlideInput {
+  placement: HomepageHeroPlacement;
   headline: string;
   subtitle: string | null;
   offerLabel: string | null;
@@ -41,6 +44,7 @@ export interface UpdateDestinationImageInput {
 
 export interface HomepageHeroSlideAdminView {
   id: string;
+  placement: HomepageHeroPlacement;
   headline: string;
   subtitle: string | null;
   offerLabel: string | null;
@@ -82,6 +86,7 @@ export interface HomepageLiveDestinationView {
 
 export interface PublicHomepageHeroSlideView {
   id: string;
+  placement: HomepageHeroPlacement;
   headline: string;
   subtitle: string | null;
   offerLabel: string | null;

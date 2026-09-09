@@ -12,6 +12,7 @@ import type {
   HomepageDestinationImageAdminView,
   HomepageHeroSlideAdminView,
   HomepageLiveDestinationView,
+  HomepageHeroPlacement,
   PublicHomepageDestinationView,
   PublicHomepageHeroSlideView,
   StoredHomepageImage,
@@ -65,6 +66,13 @@ function normalizedCountryCode(value: string): string {
   return countryCode;
 }
 
+function normalizedHeroPlacement(value: HomepageHeroPlacement): HomepageHeroPlacement {
+  if (value !== "HOME" && value !== "ENTIRE_PROPERTY") {
+    throw new ValidationError("Hero placement is invalid");
+  }
+  return value;
+}
+
 function normalizedCta(
   labelValue: string | null | undefined,
   hrefValue: string | null | undefined
@@ -103,6 +111,7 @@ function normalizeHeroInput(input: CreateHeroSlideInput): CreateHeroSlideInput {
   const { ctaLabel, ctaHref } = normalizedCta(input.ctaLabel, input.ctaHref);
   validateSchedule(input.startsAt, input.endsAt);
   return {
+    placement: normalizedHeroPlacement(input.placement),
     headline: optionalText(input.headline, "Headline", 160) ?? "",
     subtitle: optionalText(input.subtitle, "Subtitle", 300),
     offerLabel: optionalText(input.offerLabel, "Offer label", 80),
@@ -155,6 +164,7 @@ function normalizeDestinationUpdate(
 function heroAdminView(row: HomepageHeroSlideRecord): HomepageHeroSlideAdminView {
   return {
     id: row.id,
+    placement: row.placement as HomepageHeroPlacement,
     headline: row.headline,
     subtitle: row.subtitle,
     offerLabel: row.offer_label,
@@ -253,16 +263,20 @@ export class HomepageContentService {
     now = new Date()
   ): Promise<{
     heroSlides: PublicHomepageHeroSlideView[];
+    entirePropertyHeroSlides: PublicHomepageHeroSlideView[];
     destinations: PublicHomepageDestinationView[];
   }> {
-    const [heroRows, destinationRows, liveDestinationRows] = await Promise.all([
-      this.repository.listPublicHeroSlides(db, now),
-      this.repository.listDestinationImages(db),
-      this.repository.listLiveDestinations(db)
-    ]);
+    const [heroRows, entirePropertyHeroRows, destinationRows, liveDestinationRows] =
+      await Promise.all([
+        this.repository.listPublicHeroSlides(db, now, "HOME"),
+        this.repository.listPublicHeroSlides(db, now, "ENTIRE_PROPERTY"),
+        this.repository.listDestinationImages(db),
+        this.repository.listLiveDestinations(db)
+      ]);
 
-    const heroSlides: PublicHomepageHeroSlideView[] = heroRows.map((row) => ({
+    const publicHeroView = (row: HomepageHeroSlideRecord): PublicHomepageHeroSlideView => ({
       id: row.id,
+      placement: row.placement as HomepageHeroPlacement,
       headline: row.headline,
       subtitle: row.subtitle,
       offerLabel: row.offer_label,
@@ -272,7 +286,10 @@ export class HomepageContentService {
       altText: row.alt_text,
       focalXPercent: row.focal_x_percent,
       focalYPercent: row.focal_y_percent
-    }));
+    });
+
+    const heroSlides = heroRows.map(publicHeroView);
+    const entirePropertyHeroSlides = entirePropertyHeroRows.map(publicHeroView);
 
     const configured = new Map(
       destinationRows
@@ -304,7 +321,7 @@ export class HomepageContentService {
       ({ sortOrder: _sortOrder, ...destination }) => destination
     );
 
-    return { heroSlides, destinations };
+    return { heroSlides, entirePropertyHeroSlides, destinations };
   }
 
   async getAdminMediaStorage(

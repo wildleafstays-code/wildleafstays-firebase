@@ -5095,6 +5095,7 @@ async function loadHomepageContent() {
 
 function renderHomepageContent() {
   renderHomepageHeroSlides();
+  renderEntirePropertyHeroSlides();
   renderHomepageDestinationOptions();
   renderHomepageDestinationImages();
   renderPropertyTaxonomyManager();
@@ -5105,15 +5106,30 @@ function homepageEmpty(message) {
 }
 
 function renderHomepageHeroSlides() {
-  const list = byId("homepageHeroList");
+  renderHeroSlidesForPlacement(
+    "HOME",
+    "homepageHeroList",
+    "No managed homepage hero slides yet. The guest homepage will keep its existing fallback hero.",
+  );
+}
+
+function renderEntirePropertyHeroSlides() {
+  renderHeroSlidesForPlacement(
+    "ENTIRE_PROPERTY",
+    "entirePropertyHeroList",
+    "No Entire Property campaign yet. The page will simply start with search and live stays.",
+  );
+}
+
+function renderHeroSlidesForPlacement(placement, listId, emptyMessage) {
+  const list = byId(listId);
+  if (!list) return;
   list.replaceChildren();
-  const slides = state.homepageContent.heroSlides || [];
+  const slides = (state.homepageContent.heroSlides || []).filter(
+    (slide) => slide.placement === placement,
+  );
   if (!slides.length) {
-    list.append(
-      homepageEmpty(
-        "No managed hero slides yet. The guest homepage will keep its existing fallback hero.",
-      ),
-    );
+    list.append(homepageEmpty(emptyMessage));
     return;
   }
 
@@ -5195,6 +5211,7 @@ function renderHomepageHeroSlides() {
           "PUT",
           "homepage-hero-update",
           {
+            placement: slide.placement || placement,
             headline: String(values.headline || "").trim(),
             subtitle: String(values.subtitle || "").trim() || null,
             offerLabel: String(values.offerLabel || "").trim() || null,
@@ -5261,7 +5278,7 @@ function renderHomepageHeroSlides() {
           idempotencyKey: newIdempotencyKey("homepage-hero-archive"),
         });
         await loadHomepageContent();
-        showMessage("Homepage hero slide archived.");
+        showMessage("Hero campaign archived.");
       },
       "danger-button",
     );
@@ -5617,51 +5634,67 @@ byId("propertyTypeCreateForm").addEventListener("submit", (event) => {
   });
 });
 
-byId("homepageHeroCreateForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  void run(async () => {
-    const form = event.currentTarget;
-    const values = Object.fromEntries(new FormData(form));
-    const file = form.elements.file.files[0];
-    if (!file) throw new Error("Choose a hero image.");
-    if (file.size > 8 * 1024 * 1024) {
-      throw new Error("Hero images must be 8 MB or smaller.");
-    }
+function bindHeroCreateForm(formId, placement, successLabel) {
+  const form = byId(formId);
+  if (!form) return;
 
-    const query = new URLSearchParams({
-      focalXPercent: String(homepageNumberOrDefault(values.focalXPercent, 50)),
-      focalYPercent: String(homepageNumberOrDefault(values.focalYPercent, 50)),
-      sortOrder: String(homepageNumberOrDefault(values.sortOrder, 0)),
-      enabled: String(form.elements.enabled.checked),
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void run(async () => {
+      const values = Object.fromEntries(new FormData(form));
+      const file = form.elements.file.files[0];
+      if (!file) throw new Error("Choose a hero image.");
+      if (file.size > 8 * 1024 * 1024) {
+        throw new Error("Hero images must be 8 MB or smaller.");
+      }
+
+      const query = new URLSearchParams({
+        placement,
+        focalXPercent: String(homepageNumberOrDefault(values.focalXPercent, 50)),
+        focalYPercent: String(homepageNumberOrDefault(values.focalYPercent, 50)),
+        sortOrder: String(homepageNumberOrDefault(values.sortOrder, 0)),
+        enabled: String(form.elements.enabled.checked),
+      });
+      for (const [key, value] of [
+        ["headline", String(values.headline || "").trim()],
+        ["subtitle", String(values.subtitle || "").trim()],
+        ["offerLabel", String(values.offerLabel || "").trim()],
+        ["ctaLabel", String(values.ctaLabel || "").trim()],
+        ["ctaHref", String(values.ctaHref || "").trim()],
+        ["altText", String(values.altText || "").trim()],
+        ["startsAt", homepageUtcDateTime(form.elements.startsAt.value) || ""],
+        ["endsAt", homepageUtcDateTime(form.elements.endsAt.value) || ""],
+      ]) {
+        if (value) query.set(key, value);
+      }
+
+      await managedUpload(
+        `/v1/platform/homepage-content/hero-slides?${query}`,
+        file,
+        `homepage-hero-create-${placement.toLowerCase()}`,
+      );
+      form.reset();
+      form.elements.focalXPercent.value = "50";
+      form.elements.focalYPercent.value = "50";
+      form.elements.sortOrder.value = "0";
+      form.elements.enabled.checked = true;
+      await loadHomepageContent();
+      showMessage(`✓ ${successLabel}`);
+      showHomepageAcknowledgement(successLabel);
     });
-    for (const [key, value] of [
-      ["headline", String(values.headline || "").trim()],
-      ["subtitle", String(values.subtitle || "").trim()],
-      ["offerLabel", String(values.offerLabel || "").trim()],
-      ["ctaLabel", String(values.ctaLabel || "").trim()],
-      ["ctaHref", String(values.ctaHref || "").trim()],
-      ["altText", String(values.altText || "").trim()],
-      ["startsAt", homepageUtcDateTime(form.elements.startsAt.value) || ""],
-      ["endsAt", homepageUtcDateTime(form.elements.endsAt.value) || ""],
-    ]) {
-      if (value) query.set(key, value);
-    }
-
-    await managedUpload(
-      `/v1/platform/homepage-content/hero-slides?${query}`,
-      file,
-      "homepage-hero-create",
-    );
-    form.reset();
-    form.elements.focalXPercent.value = "50";
-    form.elements.focalYPercent.value = "50";
-    form.elements.sortOrder.value = "0";
-    form.elements.enabled.checked = true;
-    await loadHomepageContent();
-    showMessage("✓ Homepage hero slide added successfully.");
-    showHomepageAcknowledgement("Homepage hero slide added successfully.");
   });
-});
+}
+
+bindHeroCreateForm(
+  "homepageHeroCreateForm",
+  "HOME",
+  "Homepage hero slide added successfully.",
+);
+bindHeroCreateForm(
+  "entirePropertyHeroCreateForm",
+  "ENTIRE_PROPERTY",
+  "Entire Property campaign added successfully.",
+);
 
 byId("homepageDestinationForm").addEventListener("submit", (event) => {
   event.preventDefault();

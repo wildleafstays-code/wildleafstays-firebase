@@ -105,6 +105,7 @@ describe("homepage content manager", () => {
         trx,
         manager,
         {
+          placement: "HOME",
           headline: "The Art of Doing Nothing",
           subtitle: "Consider this your invitation to disappear for a while.",
           offerLabel: null,
@@ -133,6 +134,7 @@ describe("homepage content manager", () => {
         trx,
         manager,
         {
+          placement: "HOME",
           headline: "Future campaign",
           subtitle: "Not visible yet",
           offerLabel: "Coming soon",
@@ -193,6 +195,7 @@ describe("homepage content manager", () => {
         trx,
         manager,
         {
+          placement: "HOME",
           headline: "",
           subtitle: null,
           offerLabel: null,
@@ -227,6 +230,54 @@ describe("homepage content manager", () => {
         ctaHref: null,
         imageId: created.heroSlide.id
       });
+    } finally {
+      await db.deleteFrom("homepage_hero_slides").where("id", "=", created.heroSlide.id).execute();
+    }
+  });
+
+  it("keeps Entire Property campaigns separate from the main homepage hero", async () => {
+    const service = new HomepageContentService();
+    const managerUserId = await createUser("entire-property-manager");
+    const manager = actor(managerUserId, ["CONTENT_MANAGER"]);
+
+    const created = await db.transaction().execute((trx) =>
+      service.createHeroSlide(
+        trx,
+        manager,
+        {
+          placement: "ENTIRE_PROPERTY",
+          headline: "Take the whole place",
+          subtitle: null,
+          offerLabel: "Private stay offer",
+          ctaLabel: "Explore entire stays",
+          ctaHref: "/customer/entire-properties.html#entirePropertyFilters",
+          altText: "Private Wildleaf stay",
+          focalXPercent: 50,
+          focalYPercent: 50,
+          sortOrder: 0,
+          enabled: true,
+          startsAt: null,
+          endsAt: null
+        },
+        {
+          storageProvider: "GCS",
+          storageKey: `private-homepage-test/${randomUUID()}/entire-property.webp`,
+          mimeType: "image/webp"
+        },
+        requestMetadata()
+      )
+    );
+
+    try {
+      const publicView = await service.getPublicHomepage(db);
+      expect(
+        publicView.entirePropertyHeroSlides.find((slide) => slide.id === created.heroSlide.id)
+      ).toMatchObject({
+        placement: "ENTIRE_PROPERTY",
+        headline: "Take the whole place",
+        offerLabel: "Private stay offer"
+      });
+      expect(publicView.heroSlides.some((slide) => slide.id === created.heroSlide.id)).toBe(false);
     } finally {
       await db.deleteFrom("homepage_hero_slides").where("id", "=", created.heroSlide.id).execute();
     }
@@ -275,6 +326,7 @@ describe("homepage content manager", () => {
         trx,
         manager,
         {
+          placement: "HOME",
           headline: "Versioned hero",
           subtitle: null,
           offerLabel: null,
@@ -298,6 +350,7 @@ describe("homepage content manager", () => {
     );
 
     const update = {
+      placement: "HOME" as const,
       headline: "Updated versioned hero",
       subtitle: null,
       offerLabel: null,

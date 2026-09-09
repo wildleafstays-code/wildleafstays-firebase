@@ -37,6 +37,7 @@ interface HomepageItemParams {
 }
 
 interface HeroCreateQuery {
+  placement?: "HOME" | "ENTIRE_PROPERTY";
   headline?: string;
   subtitle?: string;
   offerLabel?: string;
@@ -52,6 +53,7 @@ interface HeroCreateQuery {
 }
 
 interface HeroUpdateBody extends JsonObject {
+  placement: "HOME" | "ENTIRE_PROPERTY";
   headline: string;
   subtitle: string | null;
   offerLabel: string | null;
@@ -143,6 +145,11 @@ const heroCreateQuerySchema = {
   type: "object",
   additionalProperties: false,
   properties: {
+    placement: {
+      type: "string",
+      enum: ["HOME", "ENTIRE_PROPERTY"],
+      default: "HOME"
+    },
     headline: { type: "string", maxLength: 160 },
     subtitle: { type: "string", maxLength: 300 },
     offerLabel: { type: "string", maxLength: 80 },
@@ -162,6 +169,7 @@ const heroUpdateBodySchema = {
   type: "object",
   additionalProperties: false,
   required: [
+    "placement",
     "headline",
     "subtitle",
     "offerLabel",
@@ -177,6 +185,7 @@ const heroUpdateBodySchema = {
     "version"
   ],
   properties: {
+    placement: { type: "string", enum: ["HOME", "ENTIRE_PROPERTY"] },
     headline: { type: "string", maxLength: 160 },
     subtitle: nullableString,
     offerLabel: nullableString,
@@ -245,7 +254,7 @@ const archiveBodySchema = {
 const publicHomepageResponseSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["heroSlides", "destinations"],
+  required: ["heroSlides", "entirePropertyHeroSlides", "destinations"],
   properties: {
     heroSlides: {
       type: "array",
@@ -255,6 +264,7 @@ const publicHomepageResponseSchema = {
         additionalProperties: false,
         required: [
           "id",
+          "placement",
           "headline",
           "subtitle",
           "offerLabel",
@@ -267,6 +277,41 @@ const publicHomepageResponseSchema = {
         ],
         properties: {
           id: { type: "string", format: "uuid" },
+          placement: { type: "string", enum: ["HOME", "ENTIRE_PROPERTY"] },
+          headline: { type: "string" },
+          subtitle: nullableString,
+          offerLabel: nullableString,
+          ctaLabel: nullableString,
+          ctaHref: nullableString,
+          imageId: { type: "string", format: "uuid" },
+          altText: nullableString,
+          focalXPercent: { type: "integer", minimum: 0, maximum: 100 },
+          focalYPercent: { type: "integer", minimum: 0, maximum: 100 }
+        }
+      }
+    },
+    entirePropertyHeroSlides: {
+      type: "array",
+      maxItems: 50,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "id",
+          "placement",
+          "headline",
+          "subtitle",
+          "offerLabel",
+          "ctaLabel",
+          "ctaHref",
+          "imageId",
+          "altText",
+          "focalXPercent",
+          "focalYPercent"
+        ],
+        properties: {
+          id: { type: "string", format: "uuid" },
+          placement: { type: "string", enum: ["HOME", "ENTIRE_PROPERTY"] },
           headline: { type: "string" },
           subtitle: nullableString,
           offerLabel: nullableString,
@@ -438,6 +483,7 @@ export async function registerHomepageContentRoutes(
       }
 
       const input = {
+        placement: request.query.placement ?? "HOME",
         headline: request.query.headline ?? "",
         subtitle: request.query.subtitle ?? null,
         offerLabel: request.query.offerLabel ?? null,
@@ -457,6 +503,7 @@ export async function registerHomepageContentRoutes(
           scopeKey: `homepage.hero.create:user:${actor.userId}`,
           key,
           requestBody: {
+            placement: request.query.placement ?? "HOME",
             headline: request.query.headline ?? "",
             subtitle: request.query.subtitle ?? null,
             offerLabel: request.query.offerLabel ?? null,

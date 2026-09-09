@@ -44,14 +44,32 @@
     </header>
 
     <main>
-      <section class="catalog-intro" aria-labelledby="catalogTitle">
-        <a class="catalog-back-link" href="/customer/">← Back to Wildleaf</a>
-        <p class="eyebrow">Entire property</p>
-        <h1 id="catalogTitle">A place entirely your own.</h1>
-        <p>
-          Browse private-use Wildleaf stays by destination. Every location and
-          property shown here comes from the live owner catalogue.
-        </p>
+      <section
+        id="entirePropertyHero"
+        class="entire-property-hero hidden"
+        aria-label="Entire Property highlights"
+      >
+        <img id="entirePropertyHeroImage" class="entire-property-hero-image" alt="" />
+        <div class="entire-property-hero-shade" aria-hidden="true"></div>
+        <div class="entire-property-hero-content">
+          <p id="entirePropertyHeroOffer" class="entire-property-hero-offer hidden"></p>
+          <h1 id="entirePropertyHeroHeadline" class="hidden"></h1>
+          <p id="entirePropertyHeroSubtitle" class="entire-property-hero-subtitle hidden"></p>
+          <a
+            id="entirePropertyHeroCta"
+            class="button button-primary entire-property-hero-cta hidden"
+            href="#entirePropertyFilters"
+          ></a>
+        </div>
+        <div
+          id="entirePropertyHeroControls"
+          class="entire-property-hero-controls hidden"
+          aria-label="Campaign slides"
+        >
+          <button id="entirePropertyHeroPrevious" type="button" aria-label="Previous campaign">←</button>
+          <div id="entirePropertyHeroDots" class="entire-property-hero-dots" role="tablist"></div>
+          <button id="entirePropertyHeroNext" type="button" aria-label="Next campaign">→</button>
+        </div>
       </section>
 
       <section class="catalog-filter-shell" aria-label="Find an entire-property stay">
@@ -97,17 +115,10 @@
         </form>
       </section>
 
-      <section class="catalog-results-section" aria-labelledby="catalogResultsTitle">
-        <div class="catalog-results-heading">
-          <div>
-            <p class="eyebrow">Browse by destination</p>
-            <h2 id="catalogResultsTitle">Entire-property stays</h2>
-          </div>
-          <p id="catalogStatus" class="catalog-status" role="status">
-            Loading live properties…
-          </p>
-        </div>
-
+      <section class="catalog-results-section" aria-label="Entire-property stays by destination">
+        <p id="catalogStatus" class="sr-only" role="status">
+          Loading live properties…
+        </p>
         <div id="catalogLocationGroups" class="catalog-location-groups" aria-live="polite"></div>
       </section>
     </main>
