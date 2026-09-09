@@ -110,10 +110,12 @@ function renderHero() {
 
   if (!hero || !state.heroSlides.length) {
     hero?.classList.add("hidden");
+    document.body.classList.remove("has-entire-property-hero");
     return;
   }
 
   hero.classList.remove("hidden");
+  document.body.classList.add("has-entire-property-hero");
   renderHeroSlide(0);
   renderHeroDots();
   heroControls?.classList.toggle("hidden", state.heroSlides.length <= 1);
