@@ -132,6 +132,23 @@ test("Entire Property opens a dedicated live catalogue grouped alphabetically by
   assert.match(entirePropertySource, /mode: "villa"/);
 });
 
+test("Entire Property page uses optional Super Admin marketing instead of permanent literature", () => {
+  assert.match(entirePropertyHtml, /id="entirePropertyHero"/);
+  assert.match(entirePropertyHtml, /id="entirePropertyHeroHeadline"/);
+  assert.match(entirePropertyHtml, /id="entirePropertyHeroOffer"/);
+  assert.match(entirePropertyHtml, /id="entirePropertyHeroCta"/);
+  assert.doesNotMatch(entirePropertyHtml, /A place entirely your own/);
+  assert.doesNotMatch(entirePropertyHtml, /Browse private-use Wildleaf stays by destination/);
+  assert.doesNotMatch(entirePropertyHtml, />Browse by destination</);
+  assert.doesNotMatch(entirePropertyHtml, />Entire-property stays</);
+  assert.match(entirePropertySource, /\/v1\/public\/homepage/);
+  assert.match(entirePropertySource, /homepage\.entirePropertyHeroSlides/);
+  assert.match(entirePropertySource, /function renderHero\(\)/);
+  assert.match(entirePropertySource, /slide\.offerLabel/);
+  assert.match(entirePropertySource, /slide\.ctaLabel && slide\.ctaHref/);
+  assert.match(entirePropertySource, /hero\?\.classList\.add\("hidden"\)/);
+});
+
 test("property booking shows only the product selected by the guest", () => {
   assert.match(propertyHtml, /id="bookingModeBadge"/);
   assert.match(propertyHtml, /id="unitCountField"/);
