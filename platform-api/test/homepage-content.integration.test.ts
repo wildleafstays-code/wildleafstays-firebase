@@ -271,9 +271,7 @@ describe("homepage content manager", () => {
     try {
       const publicView = await service.getPublicHomepage(db);
       expect(
-        publicView.entirePropertyHeroSlides.find(
-          (slide) => slide.id === created.heroSlide.id
-        )
+        publicView.entirePropertyHeroSlides.find((slide) => slide.id === created.heroSlide.id)
       ).toMatchObject({
         placement: "ENTIRE_PROPERTY",
         headline: "Take the whole place",
