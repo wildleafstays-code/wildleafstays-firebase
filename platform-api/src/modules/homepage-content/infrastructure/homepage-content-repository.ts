@@ -7,7 +7,7 @@ import type {
 import type {
   CreateDestinationImageInput,
   CreateHeroSlideInput,
-  type HomepageHeroPlacement,
+  HomepageHeroPlacement,
   StoredHomepageImage,
   UpdateDestinationImageInput,
   UpdateHeroSlideInput
