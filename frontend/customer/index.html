@@ -100,13 +100,12 @@
             </button>
           </div>
 
-          <div class="stay-mode-switch" role="tablist" aria-label="Booking style">
+          <div class="stay-mode-switch" aria-label="Booking style">
             <button
               id="modeAll"
               class="stay-mode-button active"
               type="button"
-              role="tab"
-              aria-selected="true"
+              aria-pressed="true"
               data-mode="all"
             >
               <span class="mode-icon" aria-hidden="true">⌘</span>
@@ -116,24 +115,21 @@
               id="modeHotel"
               class="stay-mode-button"
               type="button"
-              role="tab"
-              aria-selected="false"
+              aria-pressed="false"
               data-mode="hotel"
             >
               <span class="mode-icon" aria-hidden="true">▦</span>
               <span><strong>Book by room</strong><small>Room-based stay</small></span>
             </button>
-            <button
+            <a
               id="modeVilla"
               class="stay-mode-button"
-              type="button"
-              role="tab"
-              aria-selected="false"
+              href="/customer/entire-properties.html"
               data-mode="villa"
             >
               <span class="mode-icon" aria-hidden="true">⌂</span>
               <span><strong>Entire property</strong><small>Private use</small></span>
-            </button>
+            </a>
           </div>
 
           <label class="search-field search-destination">
@@ -224,25 +220,16 @@
 
       <section id="destinations" class="destination-section" aria-labelledby="destinationHeading">
         <div class="discovery-heading">
-          <div>
-            <p class="eyebrow">Explore Wildleaf</p>
-            <h2 id="destinationHeading">Pick a destination</h2>
-          </div>
+          <h2 id="destinationHeading">Destinations</h2>
           <p>Start with somewhere that catches your eye.</p>
         </div>
         <div id="destinationRail" class="destination-rail" aria-live="polite"></div>
       </section>
 
-      <section id="stays" class="section stays-section">
-        <div class="section-heading">
-          <div>
-            <p id="resultsEyebrow" class="eyebrow">Explore stays</p>
-            <h2 id="resultsTitle">Stay collections</h2>
-          </div>
-          <p id="resultsStatus" class="section-note" role="status">
-            Loading live properties…
-          </p>
-        </div>
+      <section id="stays" class="section stays-section" aria-label="Stay categories">
+        <p id="resultsStatus" class="sr-only" role="status">
+          Loading live properties…
+        </p>
         <div id="results" class="property-category-sections" aria-live="polite"></div>
       </section>
 
