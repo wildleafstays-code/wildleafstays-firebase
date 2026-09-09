@@ -148,6 +148,19 @@ test("homepage hero metadata is optional and save actions are acknowledged", () 
   assert.match(source, /Homepage hero slide saved successfully\./);
 });
 
+test("Super Admin can manage Entire Property campaigns through the shared hero system", () => {
+  assert.match(html, /id="entirePropertyHeroCreateForm"/);
+  assert.match(html, /id="entirePropertyHeroList"/);
+  assert.match(html, /Entire Property hero campaigns/);
+  assert.match(html, /Offer \/ banner text <span class="optional">optional<\/span>/);
+  assert.match(html, /CTA button text <span class="optional">optional<\/span>/);
+  assert.match(source, /bindHeroCreateForm\(/);
+  assert.match(source, /"entirePropertyHeroCreateForm",[\s\S]*"ENTIRE_PROPERTY"/);
+  assert.match(source, /renderEntirePropertyHeroSlides\(\)/);
+  assert.match(source, /slide\.placement === placement/);
+  assert.match(source, /placement: slide\.placement \|\| placement/);
+});
+
 test("property categories and types come from the taxonomy APIs instead of frontend enums", () => {
   assert.match(html, /id="createPropertyCategory"[^>]*name="propertyCategoryId"/);
   assert.match(html, /id="createPropertyType"[^>]*name="propertyTypeId"/);
