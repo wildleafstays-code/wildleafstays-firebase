@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+const firebaseConfig = JSON.parse(
+  await readFile(new URL("../../../firebase.json", import.meta.url), "utf8"),
+);
+
 const homeHtml = await readFile(
   new URL("../index.html", import.meta.url),
   "utf8",
@@ -61,6 +65,14 @@ test("homepage categories, sliders and filters are generated from database taxon
     combined,
     /Hotels & Resorts|Villas & Homestays|Cabins & Unique Stays|Glamping & Nature Stays|Heritage & Special Stays/,
   );
+});
+
+test("site root opens the all-stays discovery homepage by default", () => {
+  const rootRedirect = firebaseConfig.hosting.redirects.find(
+    (redirect) => redirect.source === "/",
+  );
+  assert.equal(rootRedirect?.destination, "/customer/");
+  assert.doesNotMatch(rootRedirect?.destination || "", /mode=hotel/);
 });
 
 test("homepage discovery removes redundant heading layers and keeps live categories primary", () => {
