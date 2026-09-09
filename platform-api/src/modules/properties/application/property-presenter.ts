@@ -9,7 +9,8 @@ export interface PropertyView extends JsonObject {
   status: string;
   timezone: string;
   version: number;
-  propertyType: string | null;
+  propertyCategoryId: string | null;
+  propertyTypeId: string | null;
   saleMode: string | null;
   shortDescription: string | null;
   description: string | null;
@@ -39,7 +40,8 @@ export function presentProperty(row: PropertyRecord): PropertyView {
     status: row.status,
     timezone: row.timezone,
     version: row.version,
-    propertyType: row.property_type,
+    propertyCategoryId: row.property_category_id,
+    propertyTypeId: row.property_type_id,
     saleMode: row.sale_mode,
     shortDescription: row.short_description,
     description: row.description,

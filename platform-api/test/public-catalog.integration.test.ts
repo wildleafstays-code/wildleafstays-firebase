@@ -34,6 +34,10 @@ interface Fixture {
   privatePhone: string;
   privateAddress: string;
   privateStorageKey: string;
+  hotelsCategoryId: string;
+  resortTypeId: string;
+  villasCategoryId: string;
+  homestayTypeId: string;
 }
 
 let app: FastifyInstance;
@@ -49,6 +53,23 @@ const propertyAssetStorage: PropertyAssetStorage = {
     return `https://storage.example.test/${encodeURIComponent(objectKey)}`;
   }
 };
+
+async function taxonomyPair(typeCode: string): Promise<{
+  propertyCategoryId: string;
+  propertyTypeId: string;
+}> {
+  const row = await db
+    .selectFrom("property_types as type")
+    .innerJoin("property_categories as category", "category.id", "type.property_category_id")
+    .select(["category.id as category_id", "type.id as type_id"])
+    .where("type.code", "=", typeCode)
+    .executeTakeFirstOrThrow();
+
+  return {
+    propertyCategoryId: row.category_id,
+    propertyTypeId: row.type_id
+  };
+}
 
 async function createFixture(): Promise<Fixture> {
   const suffix = randomUUID().replaceAll("-", "").slice(0, 10);
@@ -80,6 +101,9 @@ async function createFixture(): Promise<Fixture> {
   const privateAddress = `Private Street ${suffix}`;
   const privateStorageKey = `private/catalog/${suffix}/cover.jpg`;
   const privatePhysicalStorageKey = `private/catalog/${suffix}/physical-fallback.webp`;
+  const resortTaxonomy = await taxonomyPair("RESORT");
+  const hotelTaxonomy = await taxonomyPair("HOTEL");
+  const homestayTaxonomy = await taxonomyPair("HOMESTAY");
 
   await db
     .insertInto("organizations")
@@ -103,6 +127,8 @@ async function createFixture(): Promise<Fixture> {
       name: `Wildleaf Catalog Live ${suffix}`,
       status: "LIVE",
       timezone: "Asia/Kolkata",
+      property_category_id: resortTaxonomy.propertyCategoryId,
+      property_type_id: resortTaxonomy.propertyTypeId,
       property_type: "RESORT",
       sale_mode: "BOTH",
       short_description: "Public catalog summary",
@@ -133,6 +159,8 @@ async function createFixture(): Promise<Fixture> {
       name: `Wildleaf Catalog Draft ${suffix}`,
       status: "DRAFT",
       timezone: "Asia/Kolkata",
+      property_category_id: hotelTaxonomy.propertyCategoryId,
+      property_type_id: hotelTaxonomy.propertyTypeId,
       property_type: "HOTEL",
       sale_mode: "ROOMS_ONLY",
       short_description: "Must never be public",
@@ -152,6 +180,8 @@ async function createFixture(): Promise<Fixture> {
       name: `Wildleaf Other Live ${suffix}`,
       status: "LIVE",
       timezone: "Asia/Kolkata",
+      property_category_id: homestayTaxonomy.propertyCategoryId,
+      property_type_id: homestayTaxonomy.propertyTypeId,
       property_type: "HOMESTAY",
       sale_mode: "ROOMS_ONLY",
       short_description: "Another public destination",
@@ -454,7 +484,11 @@ async function createFixture(): Promise<Fixture> {
     privateEmail,
     privatePhone,
     privateAddress,
-    privateStorageKey
+    privateStorageKey,
+    hotelsCategoryId: resortTaxonomy.propertyCategoryId,
+    resortTypeId: resortTaxonomy.propertyTypeId,
+    villasCategoryId: homestayTaxonomy.propertyCategoryId,
+    homestayTypeId: homestayTaxonomy.propertyTypeId
   };
 }
 
@@ -551,6 +585,10 @@ describe("Phase 6A public property catalog", () => {
       city: fixture.city,
       stateRegion: "Himachal Pradesh",
       countryCode: "IN",
+      propertyCategoryId: fixture.hotelsCategoryId,
+      propertyCategoryName: "Hotels & Resorts",
+      propertyTypeId: fixture.resortTypeId,
+      propertyTypeName: "Resort",
       coverMediaId: fixture.activeMediaId
     });
 
@@ -561,6 +599,37 @@ describe("Phase 6A public property catalog", () => {
     expect(serialized).not.toContain(fixture.privatePhone);
     expect(serialized).not.toContain(fixture.privateAddress);
     expect(serialized).not.toContain(fixture.privateStorageKey);
+  });
+
+  it("filters live discovery by database Property Category and Property Type", async () => {
+    const byCategory = await app.inject({
+      method: "GET",
+      url: `/v1/public/properties?categoryId=${fixture.hotelsCategoryId}&limit=20`
+    });
+    expect(byCategory.statusCode).toBe(200);
+    const categoryBody = byCategory.json() as {
+      properties: Array<{ publicSlug: string; propertyCategoryId: string | null }>;
+    };
+    expect(categoryBody.properties).toContainEqual(
+      expect.objectContaining({
+        publicSlug: fixture.publicSlug,
+        propertyCategoryId: fixture.hotelsCategoryId
+      })
+    );
+    expect(categoryBody.properties).not.toContainEqual(
+      expect.objectContaining({ propertyCategoryId: fixture.villasCategoryId })
+    );
+
+    const byType = await app.inject({
+      method: "GET",
+      url: `/v1/public/properties?typeId=${fixture.homestayTypeId}&limit=20`
+    });
+    expect(byType.statusCode).toBe(200);
+    const typeBody = byType.json() as {
+      properties: Array<{ propertyTypeId: string | null }>;
+    };
+    expect(typeBody.properties).toHaveLength(1);
+    expect(typeBody.properties[0]?.propertyTypeId).toBe(fixture.homestayTypeId);
   });
 
   it("returns a sanitized live property detail with active categories, amenities, policies and media metadata", async () => {

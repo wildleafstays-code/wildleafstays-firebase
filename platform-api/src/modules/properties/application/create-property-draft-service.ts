@@ -9,6 +9,7 @@ import { OutboxService } from "../../../shared/outbox/outbox-service.js";
 import type { CreatePropertyDraftInput } from "../domain/property-profile.js";
 import { PropertyRepository } from "../infrastructure/property-repository.js";
 import { presentProperty, type PropertyView } from "./property-presenter.js";
+import { PropertyTaxonomyService } from "../../property-taxonomy/application/property-taxonomy-service.js";
 
 export interface CreatePropertyDraftResult extends JsonObject {
   property: PropertyView;
@@ -17,7 +18,8 @@ export interface CreatePropertyDraftResult extends JsonObject {
 export class CreatePropertyDraftService {
   constructor(
     private readonly repository = new PropertyRepository(),
-    private readonly authorization = new AuthorizationService()
+    private readonly authorization = new AuthorizationService(),
+    private readonly taxonomy = new PropertyTaxonomyService()
   ) {}
 
   async execute(
@@ -31,7 +33,13 @@ export class CreatePropertyDraftService {
       organizationId: input.organizationId
     });
 
-    const property = await this.repository.createDraft(trx, input);
+    const taxonomy = await this.taxonomy.assertSelectablePair(
+      trx,
+      input.propertyCategoryId,
+      input.propertyTypeId
+    );
+
+    const property = await this.repository.createDraft(trx, input, taxonomy.legacyPropertyType);
 
     const audit = new AuditService(trx);
     await audit.record({
@@ -46,6 +54,8 @@ export class CreatePropertyDraftService {
         name: property.name,
         status: property.status,
         timezone: property.timezone,
+        propertyCategoryId: property.property_category_id,
+        propertyTypeId: property.property_type_id,
         version: property.version
       },
       request

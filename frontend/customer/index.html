@@ -26,8 +26,7 @@
 
       <nav class="site-nav desktop-nav" aria-label="Primary navigation">
         <a href="#destinations">Destinations</a>
-        <a href="#stays" data-nav-mode="hotel">Hotels</a>
-        <a href="#stays" data-nav-mode="villa">Entire villas</a>
+        <a href="#stays">Stays</a>
         <a href="#why-wildleaf">Why Wildleaf</a>
         <a href="#contact">Contact</a>
       </nav>
@@ -36,8 +35,7 @@
         <summary aria-label="Open navigation menu">☰</summary>
         <nav aria-label="Mobile navigation">
           <a href="#destinations">Destinations</a>
-          <a href="#stays" data-nav-mode="hotel">Hotels</a>
-          <a href="#stays" data-nav-mode="villa">Entire villas</a>
+          <a href="#stays">Stays</a>
           <a href="#why-wildleaf">Why Wildleaf</a>
           <a href="#contact">Contact</a>
         </nav>
@@ -56,7 +54,7 @@
           <p id="heroEyebrow" class="eyebrow">Thoughtful stays, naturally</p>
           <h1 id="heroHeadline">Find a stay that feels right.</h1>
           <p id="heroSubtitle" class="hero-copy">
-            Handpicked hotels and private villas with live availability and secure booking.
+            Handpicked stays with live availability and secure booking.
           </p>
           <a id="heroCta" class="hero-cta hidden" href="#stays">Explore stays</a>
         </div>
@@ -102,17 +100,28 @@
             </button>
           </div>
 
-          <div class="stay-mode-switch" role="tablist" aria-label="Stay type">
+          <div class="stay-mode-switch" role="tablist" aria-label="Booking style">
             <button
-              id="modeHotel"
+              id="modeAll"
               class="stay-mode-button active"
               type="button"
               role="tab"
               aria-selected="true"
+              data-mode="all"
+            >
+              <span class="mode-icon" aria-hidden="true">⌘</span>
+              <span><strong>All stays</strong><small>Browse every category</small></span>
+            </button>
+            <button
+              id="modeHotel"
+              class="stay-mode-button"
+              type="button"
+              role="tab"
+              aria-selected="false"
               data-mode="hotel"
             >
               <span class="mode-icon" aria-hidden="true">▦</span>
-              <span><strong>Hotel rooms</strong><small>Book by room</small></span>
+              <span><strong>Book by room</strong><small>Room-based stay</small></span>
             </button>
             <button
               id="modeVilla"
@@ -123,7 +132,7 @@
               data-mode="villa"
             >
               <span class="mode-icon" aria-hidden="true">⌂</span>
-              <span><strong>Entire villas</strong><small>Private use</small></span>
+              <span><strong>Entire property</strong><small>Private use</small></span>
             </button>
           </div>
 
@@ -137,6 +146,20 @@
               autocomplete="off"
             />
             <datalist id="destinationList"></datalist>
+          </label>
+
+          <label class="search-field search-taxonomy">
+            <span>Property Category</span>
+            <select id="propertyCategory" name="propertyCategoryId">
+              <option value="">All categories</option>
+            </select>
+          </label>
+
+          <label class="search-field search-taxonomy">
+            <span>Property Type</span>
+            <select id="propertyType" name="propertyTypeId" disabled>
+              <option value="">All property types</option>
+            </select>
           </label>
 
           <label class="search-field">
@@ -194,7 +217,7 @@
           </div>
 
           <button class="button button-primary search-button" type="submit">
-            Search hotels
+            Search stays
           </button>
         </form>
       </section>
@@ -213,14 +236,14 @@
       <section id="stays" class="section stays-section">
         <div class="section-heading">
           <div>
-            <p id="resultsEyebrow" class="eyebrow">Hotel rooms</p>
-            <h2 id="resultsTitle">Hotels you can book by room</h2>
+            <p id="resultsEyebrow" class="eyebrow">Explore stays</p>
+            <h2 id="resultsTitle">Stay collections</h2>
           </div>
           <p id="resultsStatus" class="section-note" role="status">
             Loading live properties…
           </p>
         </div>
-        <div id="results" class="property-grid" aria-live="polite"></div>
+        <div id="results" class="property-category-sections" aria-live="polite"></div>
       </section>
 
       <section id="why-wildleaf" class="section promise-section">

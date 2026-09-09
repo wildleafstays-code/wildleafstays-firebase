@@ -19,15 +19,39 @@ const propertySource = await readFile(
   "utf8",
 );
 
-test("guest discovery clearly separates hotel rooms from entire villas", () => {
+test("booking style remains independent from database Property Category", () => {
+  assert.match(homeHtml, /id="modeAll"/);
   assert.match(homeHtml, /id="modeHotel"/);
   assert.match(homeHtml, /id="modeVilla"/);
-  assert.match(homeHtml, />Hotel rooms</);
-  assert.match(homeHtml, />Entire villas</);
+  assert.match(homeHtml, />Book by room</);
+  assert.match(homeHtml, />Entire property</);
   assert.match(homeSource, /saleModeAllows/);
   assert.match(homeSource, /ROOMS_ONLY/);
   assert.match(homeSource, /FULL_PROPERTY_ONLY/);
-  assert.match(homeSource, /mode: state\.mode/);
+  assert.match(homeSource, /function bookingModeForProperty\(property\)/);
+  assert.match(homeSource, /mode: bookingModeForProperty\(property\)/);
+  assert.match(homeSource, /if \(mode === "all"\) return true/);
+});
+
+test("homepage categories, sliders and filters are generated from database taxonomy", () => {
+  assert.match(homeHtml, /id="propertyCategory"[^>]*name="propertyCategoryId"/);
+  assert.match(homeHtml, /id="propertyType"[^>]*name="propertyTypeId"/);
+  assert.match(homeHtml, /class="property-category-sections"/);
+  assert.match(homeSource, /\/v1\/public\/property-taxonomy/);
+  assert.match(homeSource, /function renderPropertyTaxonomyFilters\(\)/);
+  assert.match(homeSource, /query\.set\("categoryId", categoryId\)/);
+  assert.match(homeSource, /query\.set\("typeId", typeId\)/);
+  assert.match(homeSource, /category\.homepageHeading \|\| category\.name/);
+  assert.match(homeSource, /if \(!categoryProperties\.length\) continue/);
+  assert.match(homeSource, /property-category-rail/);
+  assert.match(propertySource, /property\.propertyCategoryName/);
+  assert.match(propertySource, /property\.propertyTypeName/);
+
+  const combined = `${homeHtml}\n${homeSource}`;
+  assert.doesNotMatch(
+    combined,
+    /Hotels & Resorts|Villas & Homestays|Cabins & Unique Stays|Glamping & Nature Stays|Heritage & Special Stays/,
+  );
 });
 
 test("property booking shows only the product selected by the guest", () => {
@@ -38,8 +62,8 @@ test("property booking shows only the product selected by the guest", () => {
   assert.match(propertySource, /state\.bookingMode === "villa"\) count = 1/);
 });
 
-test("villa presentation explicitly uses the shared room source", () => {
-  assert.match(propertySource, /One villa, one shared inventory/);
+test("entire-property presentation explicitly uses the shared room source", () => {
+  assert.match(propertySource, /One entire stay, one shared inventory/);
   assert.match(propertySource, /calculated from the room categories below/);
   assert.doesNotMatch(propertySource, /villaBaseRate|separateVillaRate/);
 });

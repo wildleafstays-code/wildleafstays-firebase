@@ -60,7 +60,8 @@ test("profilePayload omits empty optional values and keeps optimistic versioning
       {
         name: "  Pine House  ",
         timezone: "Asia/Kolkata",
-        propertyType: "HOTEL",
+        propertyCategoryId: "category-1",
+        propertyTypeId: "type-1",
         city: "",
         latitude: "30.123",
       },
@@ -70,7 +71,8 @@ test("profilePayload omits empty optional values and keeps optimistic versioning
       version: 4,
       name: "Pine House",
       timezone: "Asia/Kolkata",
-      propertyType: "HOTEL",
+      propertyCategoryId: "category-1",
+      propertyTypeId: "type-1",
       latitude: 30.123,
     },
   );
@@ -144,6 +146,27 @@ test("homepage hero metadata is optional and save actions are acknowledged", () 
   assert.match(source, /function showHomepageAcknowledgement\(message\)/);
   assert.match(source, /Homepage hero slide added successfully\./);
   assert.match(source, /Homepage hero slide saved successfully\./);
+});
+
+test("property categories and types come from the taxonomy APIs instead of frontend enums", () => {
+  assert.match(html, /id="createPropertyCategory"[^>]*name="propertyCategoryId"/);
+  assert.match(html, /id="createPropertyType"[^>]*name="propertyTypeId"/);
+  assert.match(html, /id="profilePropertyCategory"[^>]*name="propertyCategoryId"/);
+  assert.match(html, /id="profilePropertyType"[^>]*name="propertyTypeId"/);
+  assert.match(html, /id="propertyCategoryCreateForm"/);
+  assert.match(html, /id="propertyTypeCreateForm"/);
+  assert.match(source, /\/v1\/public\/property-taxonomy/);
+  assert.match(source, /\/v1\/platform\/property-taxonomy/);
+  assert.match(source, /function populateTaxonomyTypeSelect\(/);
+  assert.match(source, /propertyType\.categoryId === categoryId/);
+
+  const profileStart = html.indexOf('id="profileForm"');
+  const profileEnd = html.indexOf("</form>", profileStart);
+  const profileMarkup = html.slice(profileStart, profileEnd);
+  assert.doesNotMatch(
+    profileMarkup,
+    /<option[^>]*>\s*(HOTEL|RESORT|VILLA|HOMESTAY|COTTAGE_CLUSTER|APARTMENT|HOSTEL|OTHER)\s*<\/option>/,
+  );
 });
 
 test("property draft creation preserves exact-retry idempotency across UI failures", () => {

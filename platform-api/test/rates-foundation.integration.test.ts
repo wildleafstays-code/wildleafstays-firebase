@@ -5,6 +5,7 @@ import { createDatabase } from "../src/infrastructure/database/database.js";
 import type { ActorContext } from "../src/modules/access/domain/actor-context.js";
 import { CreateOrganizationService } from "../src/modules/organizations/application/create-organization-service.js";
 import { CreatePropertyDraftService } from "../src/modules/properties/application/create-property-draft-service.js";
+import { propertyTaxonomyPair } from "./helpers/property-taxonomy-test-helper.js";
 import { PropertySetupService } from "../src/modules/property-setup/application/property-setup-service.js";
 import { RateService } from "../src/modules/rates/application/rate-service.js";
 import type { RateProductType } from "../src/modules/rates/domain/rates.js";
@@ -86,6 +87,8 @@ async function createFixture(
     ]
   };
 
+  const taxonomy = await propertyTaxonomyPair(db, saleMode === "ROOMS_ONLY" ? "HOTEL" : "VILLA");
+
   const property = await db.transaction().execute((trx) =>
     new CreatePropertyDraftService().execute(
       trx,
@@ -93,7 +96,8 @@ async function createFixture(
       {
         organizationId: organization.organizationId,
         name: `Rate Property ${randomUUID()}`,
-        timezone: "Asia/Kolkata"
+        timezone: "Asia/Kolkata",
+        ...taxonomy
       },
       metadata()
     )

@@ -30,6 +30,7 @@ import { registerPropertyOnboardingRoutes } from "./modules/property-onboarding/
 import { registerQualityAuditRoutes } from "./modules/quality/transport/quality-audit-routes.js";
 import { registerPropertyRoutes } from "./modules/properties/transport/property-routes.js";
 import { registerPropertySetupRoutes } from "./modules/property-setup/transport/property-setup-routes.js";
+import { registerPropertyTaxonomyRoutes } from "./modules/property-taxonomy/transport/property-taxonomy-routes.js";
 import { registerQuoteRoutes } from "./modules/quotes/transport/quote-routes.js";
 import { registerRateRoutes } from "./modules/rates/transport/rate-routes.js";
 import { registerReportRoutes } from "./modules/reports/transport/report-routes.js";
@@ -224,6 +225,13 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   });
 
   await registerPropertyRoutes(app, {
+    db: deps.db,
+    identityVerifier: deps.identityVerifier,
+    userRepository,
+    accessRepository
+  });
+
+  await registerPropertyTaxonomyRoutes(app, {
     db: deps.db,
     identityVerifier: deps.identityVerifier,
     userRepository,

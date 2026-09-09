@@ -17,7 +17,10 @@ const superRateId = "44444444-4444-4444-8444-444444444444";
 const property: PublicPropertyDetailView = {
   publicSlug: "smart-mix-hotel",
   name: "Smart Mix Hotel",
-  propertyType: "HOTEL",
+  propertyCategoryId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  propertyCategoryName: "Test Category",
+  propertyTypeId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  propertyTypeName: "Test Type",
   saleMode: "ROOMS_ONLY",
   shortDescription: null,
   locality: "Chail",

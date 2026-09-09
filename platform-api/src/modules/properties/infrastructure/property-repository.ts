@@ -10,7 +10,11 @@ export type PropertyRecord = Selectable<PropertiesTable>;
 type DbExecutor = Kysely<Database> | Transaction<Database>;
 
 export class PropertyRepository {
-  async createDraft(db: DbExecutor, input: CreatePropertyDraftInput): Promise<PropertyRecord> {
+  async createDraft(
+    db: DbExecutor,
+    input: CreatePropertyDraftInput,
+    legacyPropertyType: string
+  ): Promise<PropertyRecord> {
     return db
       .insertInto("properties")
       .values({
@@ -20,7 +24,9 @@ export class PropertyRepository {
         name: input.name,
         status: "DRAFT",
         timezone: input.timezone,
-        property_type: null,
+        property_category_id: input.propertyCategoryId,
+        property_type_id: input.propertyTypeId,
+        property_type: legacyPropertyType,
         sale_mode: null,
         short_description: null,
         description: null,
@@ -67,14 +73,17 @@ export class PropertyRepository {
 
   async saveProfile(
     db: DbExecutor,
-    input: SavePropertyProfileInput
+    input: SavePropertyProfileInput,
+    legacyPropertyType: string
   ): Promise<PropertyRecord | undefined> {
     return db
       .updateTable("properties")
       .set({
         name: input.name,
         timezone: input.timezone,
-        property_type: input.propertyType,
+        property_category_id: input.propertyCategoryId,
+        property_type_id: input.propertyTypeId,
+        property_type: legacyPropertyType,
         sale_mode: input.saleMode,
         short_description: input.shortDescription,
         description: input.description,

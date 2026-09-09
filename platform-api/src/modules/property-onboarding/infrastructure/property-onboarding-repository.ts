@@ -45,7 +45,10 @@ export interface PropertyReviewQueueRecord {
   name: string;
   status: string;
   version: number;
-  property_type: string | null;
+  property_category_id: string | null;
+  property_category_name: string | null;
+  property_type_id: string | null;
+  property_type_name: string | null;
   sale_mode: string | null;
   city: string | null;
   state_region: string | null;
@@ -66,6 +69,8 @@ export class PropertyOnboardingRepository {
     let query = db
       .selectFrom("properties as property")
       .innerJoin("organizations as organization", "organization.id", "property.organization_id")
+      .leftJoin("property_categories as category", "category.id", "property.property_category_id")
+      .leftJoin("property_types as type", "type.id", "property.property_type_id")
       .select([
         "property.id",
         "property.organization_id",
@@ -74,7 +79,10 @@ export class PropertyOnboardingRepository {
         "property.name",
         "property.status",
         "property.version",
-        "property.property_type",
+        "property.property_category_id",
+        "category.name as property_category_name",
+        "property.property_type_id",
+        "type.name as property_type_name",
         "property.sale_mode",
         "property.city",
         "property.state_region",

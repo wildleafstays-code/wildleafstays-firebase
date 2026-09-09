@@ -8,6 +8,7 @@ import { InventoryHoldService } from "../src/modules/inventory/application/inven
 import { CreateOrganizationService } from "../src/modules/organizations/application/create-organization-service.js";
 import { registerPublicCatalogRoutes } from "../src/modules/public-booking/transport/public-catalog-routes.js";
 import { CreatePropertyDraftService } from "../src/modules/properties/application/create-property-draft-service.js";
+import { propertyTaxonomyPair } from "./helpers/property-taxonomy-test-helper.js";
 import { PropertySetupService } from "../src/modules/property-setup/application/property-setup-service.js";
 import { RateService } from "../src/modules/rates/application/rate-service.js";
 import { registerErrorHandler } from "../src/shared/http/error-handler.js";
@@ -90,6 +91,8 @@ async function createFixture(): Promise<Fixture> {
     ]
   };
 
+  const taxonomy = await propertyTaxonomyPair(db, "VILLA");
+
   const property = await db.transaction().execute((trx) =>
     new CreatePropertyDraftService().execute(
       trx,
@@ -97,7 +100,8 @@ async function createFixture(): Promise<Fixture> {
       {
         organizationId: organization.organizationId,
         name: `Phase 6B Property ${suffix}`,
-        timezone: "Asia/Kolkata"
+        timezone: "Asia/Kolkata",
+        ...taxonomy
       },
       metadata()
     )

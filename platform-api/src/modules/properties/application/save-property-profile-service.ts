@@ -11,6 +11,7 @@ import type { SavePropertyProfileInput } from "../domain/property-profile.js";
 import { PropertyRepository, type PropertyRecord } from "../infrastructure/property-repository.js";
 import { assertOwnerPropertyEditable } from "./owner-responsibility-service.js";
 import { presentProperty, type PropertyView } from "./property-presenter.js";
+import { PropertyTaxonomyService } from "../../property-taxonomy/application/property-taxonomy-service.js";
 
 export interface SavePropertyProfileResult extends JsonObject {
   property: PropertyView;
@@ -20,7 +21,8 @@ function auditSnapshot(property: PropertyRecord): JsonObject {
   return {
     name: property.name,
     timezone: property.timezone,
-    propertyType: property.property_type,
+    propertyCategoryId: property.property_category_id,
+    propertyTypeId: property.property_type_id,
     saleMode: property.sale_mode,
     shortDescription: property.short_description,
     description: property.description,
@@ -45,7 +47,8 @@ function auditSnapshot(property: PropertyRecord): JsonObject {
 export class SavePropertyProfileService {
   constructor(
     private readonly repository = new PropertyRepository(),
-    private readonly authorization = new AuthorizationService()
+    private readonly authorization = new AuthorizationService(),
+    private readonly taxonomy = new PropertyTaxonomyService()
   ) {}
 
   async execute(
@@ -67,6 +70,12 @@ export class SavePropertyProfileService {
 
     await assertOwnerPropertyEditable(trx, before);
 
+    const taxonomy = await this.taxonomy.assertSelectablePair(
+      trx,
+      input.propertyCategoryId,
+      input.propertyTypeId
+    );
+
     if (before.version !== input.expectedVersion) {
       throw new ConflictError("Property was changed by another request", {
         propertyId: input.propertyId,
@@ -75,7 +84,7 @@ export class SavePropertyProfileService {
       });
     }
 
-    const after = await this.repository.saveProfile(trx, input);
+    const after = await this.repository.saveProfile(trx, input, taxonomy.legacyPropertyType);
     if (!after) {
       throw new ConflictError("Property was changed while this request was being processed", {
         propertyId: input.propertyId,

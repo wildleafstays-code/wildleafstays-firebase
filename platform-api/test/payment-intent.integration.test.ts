@@ -45,6 +45,7 @@ import { BeginPaymentService } from "../src/modules/reservations/application/beg
 import { PromotionRuleService } from "../src/modules/commercial/application/promotion-rule-service.js";
 import { CreateOrganizationService } from "../src/modules/organizations/application/create-organization-service.js";
 import { CreatePropertyDraftService } from "../src/modules/properties/application/create-property-draft-service.js";
+import { propertyTaxonomyPair } from "./helpers/property-taxonomy-test-helper.js";
 import { PropertySetupService } from "../src/modules/property-setup/application/property-setup-service.js";
 import { QuoteService } from "../src/modules/quotes/application/quote-service.js";
 import { RateService } from "../src/modules/rates/application/rate-service.js";
@@ -125,6 +126,8 @@ async function createFixture(): Promise<Fixture> {
     ]
   };
 
+  const taxonomy = await propertyTaxonomyPair(db, "HOTEL");
+
   const property = await db.transaction().execute((trx) =>
     new CreatePropertyDraftService().execute(
       trx,
@@ -132,7 +135,8 @@ async function createFixture(): Promise<Fixture> {
       {
         organizationId: organization.organizationId,
         name: `Promotion Quote Property ${randomUUID()}`,
-        timezone: "Asia/Kolkata"
+        timezone: "Asia/Kolkata",
+        ...taxonomy
       },
       metadata()
     )
@@ -5212,6 +5216,8 @@ describe("Phase 5E3 immutable post-stay revenue reversal", () => {
       live: boolean;
     }
   ) {
+    const portfolioTaxonomy = await propertyTaxonomyPair(db, "HOTEL");
+
     const created = await db.transaction().execute((trx) =>
       new CreatePropertyDraftService().execute(
         trx,
@@ -5219,7 +5225,8 @@ describe("Phase 5E3 immutable post-stay revenue reversal", () => {
         {
           organizationId: fixture.organizationId,
           name: options.name,
-          timezone: "Asia/Kolkata"
+          timezone: "Asia/Kolkata",
+          ...portfolioTaxonomy
         },
         metadata()
       )

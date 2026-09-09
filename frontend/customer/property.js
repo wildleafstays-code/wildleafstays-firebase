@@ -203,15 +203,15 @@ function renderProperty(property) {
 
   const villa = state.bookingMode === "villa";
   document.querySelector("#bookingModeBadge").textContent = villa
-    ? "Entire villa"
-    : "Hotel rooms";
-  document.querySelector("#propertyOverviewHeading").textContent = villa
-    ? "About this entire villa"
-    : "About this hotel";
+    ? "Entire property"
+    : "Book by room";
+  document.querySelector("#propertyOverviewHeading").textContent =
+    "About this stay";
   const facts = document.querySelector("#propertyFacts");
   facts.replaceChildren(
-    fact("Stay", villa ? "Entire property" : "Hotel room"),
-    fact("Type", titleCase(property.propertyType || "Wildleaf stay")),
+    fact("Stay", villa ? "Entire property" : "Book by room"),
+    fact("Category", property.propertyCategoryName || "Wildleaf stay"),
+    fact("Type", property.propertyTypeName || "Stay"),
     fact("Check-in", formatTime(property.checkInTime) || "Contact property"),
     fact("Check-out", formatTime(property.checkOutTime) || "Contact property"),
   );
@@ -376,11 +376,11 @@ function renderStayConfiguration(categories) {
   if (state.bookingMode === "villa") {
     const summary = element("div", "villa-source-summary");
     summary.append(
-      element("strong", "", "One villa, one shared inventory"),
+      element("strong", "", "One entire stay, one shared inventory"),
       element(
         "p",
         "",
-        "The villa includes all active rooms. Its price, included guests, maximum occupancy, and date availability are calculated from the room categories below.",
+        "The entire stay includes all active rooms. Its price, included guests, maximum occupancy, and date availability are calculated from the room categories below.",
       ),
     );
     const names = categories.map((category) => category.name).filter(Boolean);
@@ -985,8 +985,8 @@ function renderAvailability(data) {
   if (state.bookingMode === "villa") {
     showInlineMessage(
       available.length
-        ? `The entire villa is available for ${data.search.nights} ${data.search.nights === 1 ? "night" : "nights"}.`
-        : "The entire villa is not available for these dates and guests.",
+        ? `The entire property is available for ${data.search.nights} ${data.search.nights === 1 ? "night" : "nights"}.`
+        : "The entire property is not available for these dates and guests.",
       available.length ? "success" : "warning",
     );
     availabilityResults.classList.remove("room-category-rail");

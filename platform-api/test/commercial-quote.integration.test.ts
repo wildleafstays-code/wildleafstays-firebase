@@ -6,6 +6,7 @@ import type { ActorContext } from "../src/modules/access/domain/actor-context.js
 import { CommercialRuleService } from "../src/modules/commercial/application/commercial-rule-service.js";
 import { CreateOrganizationService } from "../src/modules/organizations/application/create-organization-service.js";
 import { CreatePropertyDraftService } from "../src/modules/properties/application/create-property-draft-service.js";
+import { propertyTaxonomyPair } from "./helpers/property-taxonomy-test-helper.js";
 import { PropertySetupService } from "../src/modules/property-setup/application/property-setup-service.js";
 import { QuoteService } from "../src/modules/quotes/application/quote-service.js";
 import { RateService } from "../src/modules/rates/application/rate-service.js";
@@ -85,6 +86,8 @@ async function createFixture(): Promise<Fixture> {
     ]
   };
 
+  const taxonomy = await propertyTaxonomyPair(db, "HOTEL");
+
   const property = await db.transaction().execute((trx) =>
     new CreatePropertyDraftService().execute(
       trx,
@@ -92,7 +95,8 @@ async function createFixture(): Promise<Fixture> {
       {
         organizationId: organization.organizationId,
         name: `Commercial Quote Property ${randomUUID()}`,
-        timezone: "Asia/Kolkata"
+        timezone: "Asia/Kolkata",
+        ...taxonomy
       },
       metadata()
     )

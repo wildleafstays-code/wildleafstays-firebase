@@ -18,6 +18,7 @@ import { CreateOrganizationService } from "../src/modules/organizations/applicat
 import { VerifiedPaymentEvidenceService } from "../src/modules/payments/application/verified-payment-evidence-service.js";
 import { VerifiedPaymentProcessor } from "../src/modules/payments/application/verified-payment-processor.js";
 import { CreatePropertyDraftService } from "../src/modules/properties/application/create-property-draft-service.js";
+import { propertyTaxonomyPair } from "./helpers/property-taxonomy-test-helper.js";
 import { PropertySetupService } from "../src/modules/property-setup/application/property-setup-service.js";
 import { QuoteHoldService } from "../src/modules/quotes/application/quote-hold-service.js";
 import { QuoteService } from "../src/modules/quotes/application/quote-service.js";
@@ -102,6 +103,8 @@ async function createPropertyFixture(): Promise<PropertyFixture> {
     ]
   };
 
+  const taxonomy = await propertyTaxonomyPair(db, "HOTEL");
+
   const property = await db.transaction().execute((trx) =>
     new CreatePropertyDraftService().execute(
       trx,
@@ -109,7 +112,8 @@ async function createPropertyFixture(): Promise<PropertyFixture> {
       {
         organizationId: organization.organizationId,
         name: `Phase 8B Slice 3 Property ${randomUUID()}`,
-        timezone: "Asia/Kolkata"
+        timezone: "Asia/Kolkata",
+        ...taxonomy
       },
       metadata()
     )

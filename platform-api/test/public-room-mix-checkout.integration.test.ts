@@ -15,6 +15,7 @@ import { CreateOrganizationService } from "../src/modules/organizations/applicat
 import { PublicRoomMixReservationService } from "../src/modules/public-booking/application/public-room-mix-reservation-service.js";
 import { PublicRoomMixService } from "../src/modules/public-booking/application/public-room-mix-service.js";
 import { CreatePropertyDraftService } from "../src/modules/properties/application/create-property-draft-service.js";
+import { propertyTaxonomyPair } from "./helpers/property-taxonomy-test-helper.js";
 import { PropertySetupService } from "../src/modules/property-setup/application/property-setup-service.js";
 import { RateService } from "../src/modules/rates/application/rate-service.js";
 import { BeginPaymentService } from "../src/modules/reservations/application/begin-payment-service.js";
@@ -158,13 +159,16 @@ async function createFixture(trx: Transaction<Database>): Promise<Fixture> {
     ]
   };
 
+  const taxonomy = await propertyTaxonomyPair(trx, "HOTEL");
+
   const property = await new CreatePropertyDraftService().execute(
     trx,
     actor,
     {
       organizationId: organization.organizationId,
       name: `Room Mix Property ${suffix}`,
-      timezone: "Asia/Kolkata"
+      timezone: "Asia/Kolkata",
+      ...taxonomy
     },
     metadata("integration-test")
   );
