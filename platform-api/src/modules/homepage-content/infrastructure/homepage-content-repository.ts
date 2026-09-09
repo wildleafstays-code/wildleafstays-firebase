@@ -7,6 +7,7 @@ import type {
 import type {
   CreateDestinationImageInput,
   CreateHeroSlideInput,
+  type HomepageHeroPlacement,
   StoredHomepageImage,
   UpdateDestinationImageInput,
   UpdateHeroSlideInput
@@ -34,15 +35,21 @@ export class HomepageContentRepository {
       .selectFrom("homepage_hero_slides")
       .selectAll()
       .where("status", "=", "ACTIVE")
+      .orderBy("placement")
       .orderBy("sort_order")
       .orderBy("created_at")
       .execute();
   }
 
-  async listPublicHeroSlides(db: DbExecutor, now: Date): Promise<HomepageHeroSlideRecord[]> {
+  async listPublicHeroSlides(
+    db: DbExecutor,
+    now: Date,
+    placement: HomepageHeroPlacement
+  ): Promise<HomepageHeroSlideRecord[]> {
     return db
       .selectFrom("homepage_hero_slides")
       .selectAll()
+      .where("placement", "=", placement)
       .where("status", "=", "ACTIVE")
       .where("enabled", "=", true)
       .where((eb) => eb.or([eb("starts_at", "is", null), eb("starts_at", "<=", now)]))
@@ -70,6 +77,7 @@ export class HomepageContentRepository {
     return db
       .insertInto("homepage_hero_slides")
       .values({
+        placement: input.placement,
         headline: input.headline,
         subtitle: input.subtitle,
         offer_label: input.offerLabel,
@@ -102,6 +110,7 @@ export class HomepageContentRepository {
     return db
       .updateTable("homepage_hero_slides")
       .set({
+        placement: input.placement,
         headline: input.headline,
         subtitle: input.subtitle,
         offer_label: input.offerLabel,
