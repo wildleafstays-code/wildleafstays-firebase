@@ -274,9 +274,7 @@ export class HomepageContentService {
         this.repository.listLiveDestinations(db)
       ]);
 
-    const publicHeroView = (
-      row: HomepageHeroSlideRecord
-    ): PublicHomepageHeroSlideView => ({
+    const publicHeroView = (row: HomepageHeroSlideRecord): PublicHomepageHeroSlideView => ({
       id: row.id,
       placement: row.placement as HomepageHeroPlacement,
       headline: row.headline,
