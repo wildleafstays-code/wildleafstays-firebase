@@ -8,6 +8,9 @@
   --wl-bg: #fbfaf7;
   --wl-surface: #ffffff;
   --wl-surface-soft: #f5f4ef;
+  --wl-surface-warm: #f7f2e9;
+  --wl-surface-sage: #f1f5f0;
+  --wl-surface-stone: #edf1eb;
   --wl-line: #e8e6df;
   --wl-line-strong: #d9d6cc;
   --wl-ink: #18201c;
@@ -264,7 +267,7 @@ body,
   grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.6fr);
   padding: 96px max(32px, calc((100vw - 1440px) / 2));
   color: var(--wl-ink);
-  background: #f0f2ed;
+  background: var(--wl-surface-stone);
 }
 
 .home-page .promise-intro h2 {
@@ -2414,8 +2417,8 @@ body,
 }
 
 .destination-section {
-  padding: 72px max(24px, calc((100vw - 1440px) / 2)) 40px;
-  background: #fbfaf7;
+  padding: 72px max(24px, calc((100vw - 1440px) / 2)) 52px;
+  background: var(--wl-surface-warm);
 }
 
 .discovery-heading {
@@ -3311,6 +3314,13 @@ body,
 
 .property-category-section {
   min-width: 0;
+  padding: 28px 28px 24px;
+  border-radius: 24px;
+  background: var(--wl-surface-sage);
+}
+
+.property-category-section:nth-child(even) {
+  background: var(--wl-surface-warm);
 }
 
 .property-category-heading {
@@ -3400,6 +3410,11 @@ body,
 
   .property-category-sections {
     gap: 38px;
+  }
+
+  .property-category-section {
+    padding: 20px 18px 18px;
+    border-radius: 20px;
   }
 
   .property-category-heading {
