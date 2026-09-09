@@ -279,9 +279,7 @@ describe("homepage content manager", () => {
         headline: "Take the whole place",
         offerLabel: "Private stay offer"
       });
-      expect(
-        publicView.heroSlides.some((slide) => slide.id === created.heroSlide.id)
-      ).toBe(false);
+      expect(publicView.heroSlides.some((slide) => slide.id === created.heroSlide.id)).toBe(false);
     } finally {
       await db.deleteFrom("homepage_hero_slides").where("id", "=", created.heroSlide.id).execute();
     }
