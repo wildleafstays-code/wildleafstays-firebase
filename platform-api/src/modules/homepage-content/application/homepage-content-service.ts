@@ -12,7 +12,7 @@ import type {
   HomepageDestinationImageAdminView,
   HomepageHeroSlideAdminView,
   HomepageLiveDestinationView,
-  type HomepageHeroPlacement,
+  HomepageHeroPlacement,
   PublicHomepageDestinationView,
   PublicHomepageHeroSlideView,
   StoredHomepageImage,
