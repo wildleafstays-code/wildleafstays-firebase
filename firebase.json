@@ -9,7 +9,7 @@
     "redirects": [
       {
         "source": "/",
-        "destination": "/customer/?mode=hotel",
+        "destination": "/customer/",
         "type": 302
       }
     ],
