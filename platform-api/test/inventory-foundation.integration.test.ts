@@ -6,6 +6,7 @@ import type { ActorContext } from "../src/modules/access/domain/actor-context.js
 import { InventoryService } from "../src/modules/inventory/application/inventory-service.js";
 import { CreateOrganizationService } from "../src/modules/organizations/application/create-organization-service.js";
 import { CreatePropertyDraftService } from "../src/modules/properties/application/create-property-draft-service.js";
+import { propertyTaxonomyPair } from "./helpers/property-taxonomy-test-helper.js";
 import { PropertySetupService } from "../src/modules/property-setup/application/property-setup-service.js";
 import type { SaleMode } from "../src/modules/inventory/domain/inventory.js";
 
@@ -87,6 +88,11 @@ async function createInventoryFixture(
     ]
   };
 
+  const taxonomy = await propertyTaxonomyPair(
+    db,
+    saleMode === "ROOMS_ONLY" ? "HOTEL" : "VILLA"
+  );
+
   const property = await db.transaction().execute((trx) =>
     new CreatePropertyDraftService().execute(
       trx,
@@ -94,7 +100,8 @@ async function createInventoryFixture(
       {
         organizationId: organization.organizationId,
         name: `Inventory Property ${randomUUID()}`,
-        timezone: "Asia/Kolkata"
+        timezone: "Asia/Kolkata",
+        ...taxonomy
       },
       requestMetadata()
     )
