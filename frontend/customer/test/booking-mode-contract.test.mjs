@@ -69,6 +69,8 @@ test("homepage discovery removes redundant heading layers and keeps live categor
   assert.doesNotMatch(homeHtml, /Stay collections/);
   assert.doesNotMatch(homeHtml, /Explore Wildleaf/);
   assert.match(homeSource, /element\("h2", "", category\.homepageHeading \|\| category\.name\)/);
+  assert.match(homeSource, /\.filter\(\(category\) => category\.enabled\)/);
+  assert.doesNotMatch(homeSource, /homepageVisible/);
   assert.match(homeSource, /if \(!categoryProperties\.length\) continue/);
 });
 
