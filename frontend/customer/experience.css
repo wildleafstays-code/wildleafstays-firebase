@@ -204,7 +204,7 @@ body,
 
 /* Search results */
 .home-page .stays-section {
-  padding: 132px max(32px, calc((100vw - 1440px) / 2)) 96px;
+  padding: 72px max(32px, calc((100vw - 1440px) / 2)) 92px;
   background: var(--wl-bg);
 }
 
@@ -225,11 +225,11 @@ body,
 }
 
 .home-page .property-visual {
-  height: clamp(270px, 26vw, 390px);
+  height: clamp(220px, 21vw, 290px);
 }
 
 .home-page .property-card-body {
-  padding: 1.45rem 1.5rem 1.55rem;
+  padding: 1.15rem 1.2rem 1.3rem;
 }
 
 .home-page .property-location {
@@ -2427,8 +2427,10 @@ body,
 }
 
 .discovery-heading h2 {
+  margin: 0;
   color: var(--wl-ink);
-  font-size: clamp(2rem, 3.4vw, 3.4rem);
+  font-size: clamp(1.8rem, 2.4vw, 2.45rem);
+  line-height: 1.12;
 }
 
 .discovery-heading > p {
@@ -3303,7 +3305,7 @@ body,
 
 .property-category-sections {
   display: grid;
-  gap: 46px;
+  gap: 54px;
   min-width: 0;
 }
 
@@ -3323,12 +3325,13 @@ body,
   margin-bottom: 0.3rem;
 }
 
-.property-category-heading h3 {
+.property-category-heading h2 {
   margin: 0;
   color: var(--wl-ink);
   font-family: "Playfair Display", Georgia, serif;
-  font-size: clamp(1.8rem, 3vw, 3rem);
-  line-height: 1.05;
+  font-size: clamp(1.65rem, 2.3vw, 2.35rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
 }
 
 .property-category-count {
@@ -3349,7 +3352,7 @@ body,
 }
 
 .property-category-rail .property-card {
-  flex: 0 0 clamp(310px, 29vw, 400px);
+  flex: 0 0 clamp(280px, 24vw, 340px);
   min-height: 0;
   scroll-snap-align: start;
 }
@@ -3404,8 +3407,8 @@ body,
     margin-bottom: 12px;
   }
 
-  .property-category-heading h3 {
-    font-size: clamp(1.65rem, 7.8vw, 2.35rem);
+  .property-category-heading h2 {
+    font-size: clamp(1.55rem, 7vw, 2.05rem);
   }
 
   .property-category-count {
@@ -3418,7 +3421,7 @@ body,
   }
 
   .property-category-rail .property-card {
-    flex-basis: min(84vw, 350px);
+    flex-basis: min(82vw, 330px);
   }
 }
 
@@ -3457,4 +3460,18 @@ body,
     padding-inline: 0.35rem;
     font-size: 0.78rem;
   }
+}
+
+
+/* Accessible status copy without adding visual heading clutter. */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
