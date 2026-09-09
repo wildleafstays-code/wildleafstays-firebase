@@ -371,16 +371,8 @@ function renderProperties(properties) {
     return;
   }
 
-  const filteredSearch = Boolean(
-    form.destination.value.trim() ||
-      propertyCategorySelect.value ||
-      propertyTypeSelect.value ||
-      state.mode !== "all",
-  );
-
   const orderedCategories = [...(state.propertyTaxonomy.categories || [])]
     .filter((category) => category.enabled)
-    .filter((category) => filteredSearch || category.homepageVisible)
     .sort(
       (left, right) =>
         Number(left.sortOrder || 0) - Number(right.sortOrder || 0) ||
