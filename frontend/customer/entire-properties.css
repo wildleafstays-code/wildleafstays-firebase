@@ -9,59 +9,143 @@
   z-index: 30;
 }
 
-.catalog-intro {
+.entire-property-hero {
+  position: relative;
+  min-height: clamp(360px, 40vw, 520px);
+  overflow: hidden;
+  color: #fff;
+  background: #18382c;
+}
+
+.entire-property-hero-image,
+.entire-property-hero-shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.entire-property-hero-image {
+  object-fit: cover;
+}
+
+.entire-property-hero-shade {
+  background:
+    linear-gradient(90deg, rgba(5, 20, 14, 0.76) 0%, rgba(5, 20, 14, 0.42) 48%, rgba(5, 20, 14, 0.08) 78%),
+    linear-gradient(180deg, rgba(4, 15, 10, 0.05) 42%, rgba(4, 15, 10, 0.34) 100%);
+}
+
+.entire-property-hero-content {
+  position: relative;
+  z-index: 2;
+  display: grid;
   max-width: 1440px;
+  min-height: inherit;
+  align-content: center;
   margin: 0 auto;
-  padding: 72px 32px 36px;
+  padding: 58px 32px 72px;
 }
 
-.catalog-back-link {
-  display: inline-flex;
-  margin-bottom: 2.4rem;
-  color: var(--wl-muted, #68736d);
-  font-size: 0.86rem;
-  font-weight: 700;
-  text-decoration: none;
+.entire-property-hero-offer {
+  justify-self: start;
+  margin: 0 0 0.85rem;
+  padding: 0.42rem 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(10, 34, 27, 0.54);
+  backdrop-filter: blur(10px);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.catalog-back-link:hover {
-  color: var(--wl-forest, #17372c);
-}
-
-.catalog-intro .eyebrow {
-  margin-bottom: 0.55rem;
-}
-
-.catalog-intro h1 {
-  max-width: 760px;
-  margin-bottom: 0.9rem;
-  color: var(--wl-ink, #17211d);
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: clamp(2.45rem, 4.4vw, 4.6rem);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.04em;
-}
-
-.catalog-intro > p:last-child {
-  max-width: 720px;
+.entire-property-hero h1 {
+  max-width: 650px;
   margin: 0;
-  color: var(--wl-muted, #68736d);
-  font-size: 1rem;
-  line-height: 1.7;
+  color: #fff;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(2.15rem, 3.6vw, 3.8rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+
+.entire-property-hero-subtitle {
+  max-width: 620px;
+  margin: 0.9rem 0 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: clamp(0.92rem, 1.25vw, 1.05rem);
+  line-height: 1.65;
+}
+
+.entire-property-hero-cta {
+  justify-self: start;
+  margin-top: 1.25rem;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(17, 63, 49, 0.88);
+  backdrop-filter: blur(8px);
+}
+
+.entire-property-hero-controls {
+  position: absolute;
+  z-index: 3;
+  right: max(32px, calc((100vw - 1440px) / 2));
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.entire-property-hero-controls > button,
+.entire-property-hero-dot {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(8, 29, 21, 0.42);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+
+.entire-property-hero-dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.entire-property-hero-dot {
+  width: 8px;
+  height: 8px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.entire-property-hero-dot.active {
+  width: 22px;
+  border-radius: 999px;
+  background: #fff;
 }
 
 .catalog-filter-shell {
   position: sticky;
   top: 78px;
   z-index: 20;
-  padding: 0 32px 26px;
+  padding: 44px 32px 26px;
   background: linear-gradient(
     180deg,
     rgba(251, 250, 247, 0.98) 0%,
     rgba(251, 250, 247, 0.94) 78%,
     rgba(251, 250, 247, 0) 100%
   );
+}
+
+.has-entire-property-hero .catalog-filter-shell {
+  margin-top: -36px;
+  padding-top: 0;
 }
 
 .catalog-filter-form {
@@ -156,33 +240,7 @@
 .catalog-results-section {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 48px 32px 100px;
-}
-
-.catalog-results-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 34px;
-}
-
-.catalog-results-heading .eyebrow {
-  margin-bottom: 0.45rem;
-}
-
-.catalog-results-heading h2 {
-  margin: 0;
-  color: var(--wl-ink, #17211d);
-  font-size: clamp(1.85rem, 2.6vw, 2.7rem);
-  line-height: 1.08;
-}
-
-.catalog-status {
-  margin: 0 0 0.25rem;
-  color: var(--wl-muted, #68736d);
-  font-size: 0.84rem;
-  font-weight: 650;
+  padding: 32px 32px 100px;
 }
 
 .catalog-location-groups {
@@ -436,23 +494,40 @@
     position: relative;
   }
 
-  .catalog-intro {
-    padding: 48px 18px 28px;
+  .entire-property-hero {
+    min-height: 360px;
   }
 
-  .catalog-back-link {
-    margin-bottom: 1.8rem;
+  .entire-property-hero-content {
+    padding: 42px 18px 64px;
   }
 
-  .catalog-intro h1 {
-    font-size: clamp(2.2rem, 11vw, 3.6rem);
+  .entire-property-hero h1 {
+    max-width: 520px;
+    font-size: clamp(2rem, 9.5vw, 3rem);
+  }
+
+  .entire-property-hero-subtitle {
+    max-width: 520px;
+    font-size: 0.9rem;
+  }
+
+  .entire-property-hero-controls {
+    right: 18px;
+    bottom: 18px;
   }
 
   .catalog-filter-shell {
     position: relative;
     top: auto;
-    padding: 0 18px 22px;
+    margin-top: 0;
+    padding: 34px 18px 22px;
     background: transparent;
+  }
+
+  .has-entire-property-hero .catalog-filter-shell {
+    margin-top: 0;
+    padding-top: 22px;
   }
 
   .catalog-filter-form {
@@ -471,15 +546,6 @@
 
   .catalog-results-section {
     padding: 38px 18px 72px;
-  }
-
-  .catalog-results-heading {
-    display: block;
-    margin-bottom: 28px;
-  }
-
-  .catalog-status {
-    margin-top: 0.65rem;
   }
 
   .catalog-location-groups {
@@ -507,12 +573,12 @@
 }
 
 @media (max-width: 480px) {
-  .catalog-intro {
-    padding-top: 38px;
+  .entire-property-hero {
+    min-height: 330px;
   }
 
-  .catalog-results-heading .eyebrow {
-    display: none;
+  .entire-property-hero-content {
+    padding-top: 34px;
   }
 
   .catalog-location-heading {
@@ -526,7 +592,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .catalog-property-card,
-  .catalog-property-image {
+  .catalog-property-image,
+  .entire-property-hero-dot {
     transition: none;
   }
 }
