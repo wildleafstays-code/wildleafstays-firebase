@@ -453,6 +453,7 @@ export interface PropertyMediaTable {
 
 export interface HomepageHeroSlidesTable {
   id: Generated<string>;
+  placement: Generated<string>;
   headline: string;
   subtitle: string | null;
   offer_label: string | null;
