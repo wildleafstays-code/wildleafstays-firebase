@@ -426,7 +426,6 @@ function writeFiltersToUrl() {
   if (categorySelect.value) params.set("categoryId", categorySelect.value);
   if (typeSelect.value) params.set("typeId", typeSelect.value);
 
-  const suffix = params.toString() ? `?${params}` : location.pathname;
   history.replaceState(
     null,
     "",
