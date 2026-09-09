@@ -98,19 +98,11 @@ export class PropertyTaxonomyRepository {
   }
 
   async findCategory(db: DbExecutor, id: string): Promise<PropertyCategoryRecord | undefined> {
-    return db
-      .selectFrom("property_categories")
-      .selectAll()
-      .where("id", "=", id)
-      .executeTakeFirst();
+    return db.selectFrom("property_categories").selectAll().where("id", "=", id).executeTakeFirst();
   }
 
   async findType(db: DbExecutor, id: string): Promise<PropertyTypeRecord | undefined> {
-    return db
-      .selectFrom("property_types")
-      .selectAll()
-      .where("id", "=", id)
-      .executeTakeFirst();
+    return db.selectFrom("property_types").selectAll().where("id", "=", id).executeTakeFirst();
   }
 
   async findCategoryByCode(
