@@ -28,11 +28,15 @@ const heroNext = document.querySelector("#heroNext");
 const heroDots = document.querySelector("#heroDots");
 
 const requestedMode = new URLSearchParams(location.search).get("mode");
+if (requestedMode === "villa") {
+  const legacyParams = new URLSearchParams(location.search);
+  legacyParams.delete("mode");
+  const suffix = legacyParams.toString() ? `?${legacyParams}` : "";
+  location.replace(`/customer/entire-properties.html${suffix}`);
+}
+
 const state = {
-  mode:
-    requestedMode === "villa" || requestedMode === "hotel"
-      ? requestedMode
-      : "all",
+  mode: requestedMode === "hotel" ? "hotel" : "all",
   properties: [],
   heroSlides: [],
   heroIndex: 0,
@@ -67,9 +71,16 @@ document.addEventListener("keydown", (event) => {
 });
 
 modeButtons.forEach((button) => {
-  button.addEventListener("click", () => {
+  button.addEventListener("click", (event) => {
     const mode = button.dataset.mode;
     if (!["all", "hotel", "villa"].includes(mode)) return;
+    if (mode === "villa") {
+      if (button.tagName !== "A") {
+        event.preventDefault();
+        location.assign("/customer/entire-properties.html");
+      }
+      return;
+    }
     state.mode = mode;
     applyMode();
     renderProperties(state.properties);
@@ -325,25 +336,17 @@ function taxonomyType(typeId) {
 }
 
 function updateResultsHeading(destination, categoryId, typeId) {
+  if (!resultsEyebrow && !resultsTitle) return;
   const category = taxonomyCategory(categoryId);
   const propertyType = taxonomyType(typeId);
-  resultsEyebrow.textContent =
+  const label =
     propertyType?.name ||
+    category?.homepageHeading ||
     category?.name ||
-    (state.mode === "villa"
-      ? "Entire property"
-      : state.mode === "hotel"
-        ? "Book by room"
-        : "Explore stays");
-
-  const parts = [];
-  if (propertyType) parts.push(propertyType.name);
-  else if (category) parts.push(category.homepageHeading || category.name);
-  else if (state.mode === "villa") parts.push("Entire-property stays");
-  else if (state.mode === "hotel") parts.push("Book-by-room stays");
-  else parts.push("Stay collections");
-  if (destination) parts.push(`around ${destination}`);
-  resultsTitle.textContent = parts.join(" ");
+    (state.mode === "hotel" ? "Book by room" : "Stay categories");
+  const destinationLabel = destination ? ` around ${destination}` : "";
+  if (resultsEyebrow) resultsEyebrow.textContent = "";
+  if (resultsTitle) resultsTitle.textContent = `${label}${destinationLabel}`;
 }
 
 function renderProperties(properties) {
@@ -368,16 +371,8 @@ function renderProperties(properties) {
     return;
   }
 
-  const filteredSearch = Boolean(
-    form.destination.value.trim() ||
-      propertyCategorySelect.value ||
-      propertyTypeSelect.value ||
-      state.mode !== "all",
-  );
-
   const orderedCategories = [...(state.propertyTaxonomy.categories || [])]
     .filter((category) => category.enabled)
-    .filter((category) => filteredSearch || category.homepageVisible)
     .sort(
       (left, right) =>
         Number(left.sortOrder || 0) - Number(right.sortOrder || 0) ||
@@ -395,13 +390,8 @@ function renderProperties(properties) {
     section.dataset.categoryId = category.id;
 
     const heading = element("div", "property-category-heading");
-    const copy = element("div");
-    copy.append(
-      element("p", "eyebrow", category.name),
-      element("h3", "", category.homepageHeading || category.name),
-    );
     heading.append(
-      copy,
+      element("h2", "", category.homepageHeading || category.name),
       element(
         "span",
         "property-category-count",
@@ -479,11 +469,12 @@ function propertyCard(property, index) {
   if (property.propertyTypeName) {
     tags.append(element("span", "tag", property.propertyTypeName));
   }
+  const bookingMode = bookingModeForProperty(property);
   tags.append(
     element(
       "span",
       "tag",
-      state.mode === "villa" ? "Entire property" : "Book by room",
+      bookingMode === "villa" ? "Entire property" : "Book by room",
     ),
   );
   body.append(tags);
@@ -491,7 +482,7 @@ function propertyCard(property, index) {
   const link = element(
     "a",
     "button button-primary property-cta",
-    state.mode === "villa" ? "View entire stay" : "View rooms",
+    bookingMode === "villa" ? "View entire stay" : "View rooms",
   );
   link.href = propertyUrl(property);
   link.setAttribute("aria-label", `Explore ${property.name}`);
@@ -677,7 +668,11 @@ function applyMode() {
   modeButtons.forEach((button) => {
     const selected = button.dataset.mode === state.mode;
     button.classList.toggle("active", selected);
-    button.setAttribute("aria-selected", String(selected));
+    if (button.tagName === "BUTTON") {
+      button.setAttribute("aria-pressed", String(selected));
+    } else {
+      button.removeAttribute("aria-current");
+    }
   });
   roomCountField.classList.toggle("hidden", entireProperty);
   form.rooms.value = entireProperty ? "1" : form.rooms.value || "1";

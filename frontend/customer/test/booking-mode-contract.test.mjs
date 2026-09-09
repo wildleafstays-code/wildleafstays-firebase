@@ -10,6 +10,15 @@ const homeSource = await readFile(
   new URL("../app.js", import.meta.url),
   "utf8",
 );
+const entirePropertyHtml = await readFile(
+  new URL("../entire-properties.html", import.meta.url),
+  "utf8",
+);
+const entirePropertySource = await readFile(
+  new URL("../entire-properties.js", import.meta.url),
+  "utf8",
+);
+
 const propertyHtml = await readFile(
   new URL("../property.html", import.meta.url),
   "utf8",
@@ -47,11 +56,41 @@ test("homepage categories, sliders and filters are generated from database taxon
   assert.match(propertySource, /property\.propertyCategoryName/);
   assert.match(propertySource, /property\.propertyTypeName/);
 
-  const combined = `${homeHtml}\n${homeSource}`;
+  const combined = `${homeHtml}\n${homeSource}\n${entirePropertyHtml}\n${entirePropertySource}`;
   assert.doesNotMatch(
     combined,
     /Hotels & Resorts|Villas & Homestays|Cabins & Unique Stays|Glamping & Nature Stays|Heritage & Special Stays/,
   );
+});
+
+test("homepage discovery removes redundant heading layers and keeps live categories primary", () => {
+  assert.match(homeHtml, /id="destinationHeading">Destinations</);
+  assert.doesNotMatch(homeHtml, /Pick a destination/);
+  assert.doesNotMatch(homeHtml, /Stay collections/);
+  assert.doesNotMatch(homeHtml, /Explore Wildleaf/);
+  assert.match(homeSource, /element\("h2", "", category\.homepageHeading \|\| category\.name\)/);
+  assert.match(homeSource, /\.filter\(\(category\) => category\.enabled\)/);
+  assert.doesNotMatch(homeSource, /homepageVisible/);
+  assert.match(homeSource, /if \(!categoryProperties\.length\) continue/);
+});
+
+test("Entire Property opens a dedicated live catalogue grouped alphabetically by destination", () => {
+  assert.match(
+    homeHtml,
+    /id="modeVilla"[\s\S]*href="\/customer\/entire-properties\.html"/,
+  );
+  assert.match(entirePropertyHtml, /id="entirePropertyFilters"/);
+  assert.match(entirePropertyHtml, /id="catalogDestination"/);
+  assert.match(entirePropertyHtml, /id="catalogCategory"/);
+  assert.match(entirePropertyHtml, /id="catalogType"/);
+  assert.match(entirePropertySource, /\/v1\/public\/property-taxonomy/);
+  assert.match(entirePropertySource, /\/v1\/public\/properties/);
+  assert.match(entirePropertySource, /property\.saleMode === "FULL_PROPERTY_ONLY"/);
+  assert.match(entirePropertySource, /property\.saleMode === "BOTH"/);
+  assert.match(entirePropertySource, /const locations = \[\.\.\.grouped\.keys\(\)\]\.sort\(collator\.compare\)/);
+  assert.match(entirePropertySource, /sort\(\(left, right\) => collator\.compare\(left\.name, right\.name\)\)/);
+  assert.match(entirePropertySource, /className = "catalog-location-section"|catalog-location-section/);
+  assert.match(entirePropertySource, /mode: "villa"/);
 });
 
 test("property booking shows only the product selected by the guest", () => {
