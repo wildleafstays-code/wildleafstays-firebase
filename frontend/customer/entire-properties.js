@@ -8,6 +8,16 @@ const typeSelect = document.querySelector("#catalogType");
 const resetButton = document.querySelector("#catalogReset");
 const status = document.querySelector("#catalogStatus");
 const groupsRoot = document.querySelector("#catalogLocationGroups");
+const hero = document.querySelector("#entirePropertyHero");
+const heroImage = document.querySelector("#entirePropertyHeroImage");
+const heroOffer = document.querySelector("#entirePropertyHeroOffer");
+const heroHeadline = document.querySelector("#entirePropertyHeroHeadline");
+const heroSubtitle = document.querySelector("#entirePropertyHeroSubtitle");
+const heroCta = document.querySelector("#entirePropertyHeroCta");
+const heroControls = document.querySelector("#entirePropertyHeroControls");
+const heroPrevious = document.querySelector("#entirePropertyHeroPrevious");
+const heroNext = document.querySelector("#entirePropertyHeroNext");
+const heroDots = document.querySelector("#entirePropertyHeroDots");
 
 const collator = new Intl.Collator("en-IN", {
   sensitivity: "base",
@@ -16,6 +26,9 @@ const collator = new Intl.Collator("en-IN", {
 
 const state = {
   properties: [],
+  heroSlides: [],
+  heroIndex: 0,
+  heroTimer: null,
   taxonomy: {
     categories: [],
     types: [],
@@ -59,10 +72,16 @@ async function initialize() {
   renderLoading();
 
   try {
-    const [taxonomy, properties] = await Promise.all([
+    const [taxonomy, properties, homepage] = await Promise.all([
       apiRequest("/v1/public/property-taxonomy", { cache: "default" }),
       loadAllProperties(),
+      apiRequest("/v1/public/homepage", { cache: "default" }).catch(() => ({
+        entirePropertyHeroSlides: [],
+      })),
     ]);
+
+    state.heroSlides = homepage.entirePropertyHeroSlides || [];
+    renderHero();
 
     state.taxonomy = {
       categories: taxonomy.categories || [],
@@ -80,6 +99,116 @@ async function initialize() {
   } catch (error) {
     renderError(error);
   }
+}
+
+function homepageMediaUrl(mediaId) {
+  return `/v1/public/homepage/media/${encodeURIComponent(mediaId)}`;
+}
+
+function renderHero() {
+  stopHeroTimer();
+
+  if (!hero || !state.heroSlides.length) {
+    hero?.classList.add("hidden");
+    return;
+  }
+
+  hero.classList.remove("hidden");
+  renderHeroSlide(0);
+  renderHeroDots();
+  heroControls?.classList.toggle("hidden", state.heroSlides.length <= 1);
+
+  heroPrevious?.addEventListener("click", () => {
+    stepHero(-1);
+    resetHeroTimer();
+  });
+  heroNext?.addEventListener("click", () => {
+    stepHero(1);
+    resetHeroTimer();
+  });
+
+  resetHeroTimer();
+}
+
+function renderHeroSlide(index) {
+  if (!state.heroSlides.length || !hero) return;
+  const normalized =
+    ((index % state.heroSlides.length) + state.heroSlides.length) %
+    state.heroSlides.length;
+  state.heroIndex = normalized;
+  const slide = state.heroSlides[normalized];
+
+  heroImage.src = homepageMediaUrl(slide.imageId);
+  heroImage.alt = slide.altText || "";
+  heroImage.style.objectPosition =
+    `${slide.focalXPercent}% ${slide.focalYPercent}%`;
+
+  heroOffer.textContent = slide.offerLabel || "";
+  heroOffer.classList.toggle("hidden", !slide.offerLabel);
+
+  heroHeadline.textContent = slide.headline || "";
+  heroHeadline.classList.toggle("hidden", !slide.headline);
+
+  heroSubtitle.textContent = slide.subtitle || "";
+  heroSubtitle.classList.toggle("hidden", !slide.subtitle);
+
+  if (slide.ctaLabel && slide.ctaHref) {
+    heroCta.textContent = slide.ctaLabel;
+    heroCta.href = slide.ctaHref;
+    heroCta.classList.remove("hidden");
+  } else {
+    heroCta.classList.add("hidden");
+  }
+
+  updateHeroDots();
+}
+
+function renderHeroDots() {
+  if (!heroDots) return;
+  heroDots.replaceChildren();
+  state.heroSlides.forEach((slide, index) => {
+    const dot = element("button", "entire-property-hero-dot");
+    dot.type = "button";
+    dot.setAttribute("role", "tab");
+    dot.setAttribute(
+      "aria-label",
+      slide.headline
+        ? `Show campaign ${index + 1}: ${slide.headline}`
+        : `Show campaign ${index + 1}`,
+    );
+    dot.addEventListener("click", () => {
+      renderHeroSlide(index);
+      resetHeroTimer();
+    });
+    heroDots.append(dot);
+  });
+  updateHeroDots();
+}
+
+function updateHeroDots() {
+  if (!heroDots) return;
+  [...heroDots.children].forEach((dot, index) => {
+    const active = index === state.heroIndex;
+    dot.classList.toggle("active", active);
+    dot.setAttribute("aria-selected", String(active));
+  });
+}
+
+function stepHero(direction) {
+  if (state.heroSlides.length <= 1) return;
+  renderHeroSlide(state.heroIndex + direction);
+}
+
+function stopHeroTimer() {
+  if (!state.heroTimer) return;
+  window.clearInterval(state.heroTimer);
+  state.heroTimer = null;
+}
+
+function resetHeroTimer() {
+  stopHeroTimer();
+  if (state.heroSlides.length <= 1) return;
+  state.heroTimer = window.setInterval(() => stepHero(1), 6500);
 }
 
 async function loadAllProperties() {
