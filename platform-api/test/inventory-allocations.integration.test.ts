@@ -88,10 +88,7 @@ async function createFixture(saleMode: SaleMode, capacities: number[]): Promise<
     ]
   };
 
-  const taxonomy = await propertyTaxonomyPair(
-    db,
-    saleMode === "ROOMS_ONLY" ? "HOTEL" : "VILLA"
-  );
+  const taxonomy = await propertyTaxonomyPair(db, saleMode === "ROOMS_ONLY" ? "HOTEL" : "VILLA");
 
   const property = await db.transaction().execute((trx) =>
     new CreatePropertyDraftService().execute(
