@@ -91,6 +91,21 @@ test("homepage discovery removes redundant heading layers and keeps live categor
   assert.match(homeSource, /if \(!categoryProperties\.length\) continue/);
 });
 
+test("managed homepage hero headline stays visually restrained across breakpoints", () => {
+  assert.match(
+    homeStyles,
+    /\.home-page \.managed-hero \.hero-content h1\s*\{[\s\S]*max-width:\s*820px;[\s\S]*font-size:\s*clamp\(2\.8rem, 4\.8vw, 5rem\)/,
+  );
+  assert.match(
+    homeStyles,
+    /@media \(max-width: 820px\)[\s\S]*\.home-page \.managed-hero \.hero-content h1\s*\{[\s\S]*font-size:\s*clamp\(2\.15rem, 9\.4vw, 3\.35rem\)/,
+  );
+  assert.match(
+    homeStyles,
+    /@media \(max-width: 480px\)[\s\S]*\.home-page \.managed-hero \.hero-content h1\s*\{[\s\S]*font-size:\s*clamp\(1\.95rem, 9\.8vw, 2\.8rem\)/,
+  );
+});
+
 test("homepage sections use subtle alternating surfaces to avoid a monotone scroll", () => {
   assert.match(homeStyles, /--wl-surface-warm:\s*#f7f2e9/);
   assert.match(homeStyles, /--wl-surface-sage:\s*#f1f5f0/);

@@ -3018,9 +3018,9 @@ body,
 }
 
 .home-page .managed-hero .hero-content h1 {
-  max-width: 880px;
+  max-width: 820px;
   margin-inline: auto;
-  font-size: clamp(3.2rem, 5.6vw, 5.9rem);
+  font-size: clamp(2.8rem, 4.8vw, 5rem);
 }
 
 .home-page .managed-hero .hero-copy {
@@ -3213,7 +3213,7 @@ body,
 
   .home-page .managed-hero .hero-content h1 {
     margin-inline: 0;
-    font-size: clamp(2.35rem, 10.7vw, 3.85rem);
+    font-size: clamp(2.15rem, 9.4vw, 3.35rem);
   }
 
   .home-page .managed-hero .hero-copy {
@@ -3260,7 +3260,7 @@ body,
   }
 
   .home-page .managed-hero .hero-content h1 {
-    font-size: clamp(2.15rem, 11vw, 3.15rem);
+    font-size: clamp(1.95rem, 9.8vw, 2.8rem);
   }
 
   .home-page .managed-hero .hero-copy {
