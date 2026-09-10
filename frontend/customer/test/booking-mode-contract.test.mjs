@@ -91,6 +91,26 @@ test("homepage discovery removes redundant heading layers and keeps live categor
   assert.match(homeSource, /if \(!categoryProperties\.length\) continue/);
 });
 
+test("mobile search panel stays above its backdrop and is touchable only when open", () => {
+  assert.doesNotMatch(homeStyles, /\.home-search-open::before/);
+  assert.match(
+    homeStyles,
+    /\.home-search-open \.home-hero::after\s*\{[\s\S]*z-index:\s*110;[\s\S]*pointer-events:\s*auto;/,
+  );
+  assert.match(
+    homeStyles,
+    /\.home-page \.search-card,[\s\S]*z-index:\s*120;[\s\S]*visibility:\s*hidden;[\s\S]*pointer-events:\s*none;/,
+  );
+  assert.match(
+    homeStyles,
+    /\.home-search-open \.search-card\s*\{[\s\S]*visibility:\s*visible;[\s\S]*pointer-events:\s*auto;/,
+  );
+  assert.match(
+    homeStyles,
+    /\.mobile-search-trigger\s*\{[\s\S]*touch-action:\s*manipulation;/,
+  );
+});
+
 test("managed homepage hero headline stays visually restrained across breakpoints", () => {
   assert.match(
     homeStyles,
