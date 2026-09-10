@@ -2766,7 +2766,12 @@ body,
     position: fixed;
     inset: 0;
     z-index: 110;
+    width: auto;
+    height: auto;
+    border: 0;
+    border-radius: 0;
     background: rgba(5, 15, 11, 0.52);
+    box-shadow: none;
     content: "";
     pointer-events: auto;
   }
