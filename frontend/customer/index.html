@@ -100,37 +100,16 @@
             </button>
           </div>
 
-          <div class="stay-mode-switch" aria-label="Booking style">
-            <button
-              id="modeAll"
-              class="stay-mode-button active"
-              type="button"
-              aria-pressed="true"
-              data-mode="all"
-            >
-              <span class="mode-icon" aria-hidden="true">⌘</span>
-              <span><strong>All stays</strong><small>Browse every category</small></span>
-            </button>
-            <button
-              id="modeHotel"
-              class="stay-mode-button"
-              type="button"
-              aria-pressed="false"
-              data-mode="hotel"
-            >
-              <span class="mode-icon" aria-hidden="true">▦</span>
-              <span><strong>Book by room</strong><small>Room-based stay</small></span>
-            </button>
-            <a
-              id="modeVilla"
-              class="stay-mode-button"
-              href="/customer/entire-properties.html"
-              data-mode="villa"
-            >
-              <span class="mode-icon" aria-hidden="true">⌂</span>
-              <span><strong>Entire property</strong><small>Private use</small></span>
-            </a>
-          </div>
+          <a
+            id="entirePropertyEntry"
+            class="entire-property-entry"
+            href="/customer/entire-properties.html"
+          >
+            <span aria-hidden="true">⌂</span>
+            <strong>Entire Property</strong>
+            <small>Browse private-use stays</small>
+            <span aria-hidden="true">→</span>
+          </a>
 
           <label class="search-field search-destination">
             <span>Where</span>
