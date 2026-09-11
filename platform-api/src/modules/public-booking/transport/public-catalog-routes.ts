@@ -104,7 +104,9 @@ const propertySummarySchema = {
     "city",
     "stateRegion",
     "countryCode",
-    "coverMediaId"
+    "coverMediaId",
+    "startingRoomRateMinor",
+    "currencyCode"
   ],
   properties: {
     publicSlug: { type: "string" },
@@ -119,7 +121,11 @@ const propertySummarySchema = {
     city: nullableString,
     stateRegion: nullableString,
     countryCode: { type: "string", pattern: "^[A-Z]{2}$" },
-    coverMediaId: nullableUuid
+    coverMediaId: nullableUuid,
+    startingRoomRateMinor: nullableInteger,
+    currencyCode: {
+      anyOf: [{ type: "string", minLength: 3, maxLength: 3 }, { type: "null" }]
+    }
   }
 } as const;
 

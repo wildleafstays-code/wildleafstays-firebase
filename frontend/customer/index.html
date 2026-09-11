@@ -16,6 +16,7 @@
     />
     <link rel="stylesheet" href="/customer/styles.css" />
     <link rel="stylesheet" href="/customer/experience.css" />
+    <link rel="stylesheet" href="/customer/booking-discovery.css" />
   </head>
   <body class="home-page">
     <header class="site-header">
@@ -80,11 +81,7 @@
           <span class="mobile-search-arrow" aria-hidden="true">→</span>
         </button>
 
-        <form
-          id="searchForm"
-          class="search-card"
-          aria-label="Find a Wildleaf stay"
-        >
+        <form id="searchForm" class="search-card" aria-label="Find a Wildleaf stay">
           <div class="mobile-search-panel-head">
             <div>
               <small>Plan your stay</small>
@@ -100,37 +97,16 @@
             </button>
           </div>
 
-          <div class="stay-mode-switch" aria-label="Booking style">
-            <button
-              id="modeAll"
-              class="stay-mode-button active"
-              type="button"
-              aria-pressed="true"
-              data-mode="all"
-            >
-              <span class="mode-icon" aria-hidden="true">⌘</span>
-              <span><strong>All stays</strong><small>Browse every category</small></span>
-            </button>
-            <button
-              id="modeHotel"
-              class="stay-mode-button"
-              type="button"
-              aria-pressed="false"
-              data-mode="hotel"
-            >
-              <span class="mode-icon" aria-hidden="true">▦</span>
-              <span><strong>Book by room</strong><small>Room-based stay</small></span>
-            </button>
-            <a
-              id="modeVilla"
-              class="stay-mode-button"
-              href="/customer/entire-properties.html"
-              data-mode="villa"
-            >
-              <span class="mode-icon" aria-hidden="true">⌂</span>
-              <span><strong>Entire property</strong><small>Private use</small></span>
-            </a>
-          </div>
+          <a
+            id="entirePropertyEntry"
+            class="entire-property-entry"
+            href="/customer/entire-properties.html"
+          >
+            <span aria-hidden="true">⌂</span>
+            <strong>Entire Property</strong>
+            <small>Browse private-use stays</small>
+            <span aria-hidden="true">→</span>
+          </a>
 
           <label class="search-field search-destination">
             <span>Where</span>
@@ -165,56 +141,25 @@
 
           <label class="search-field">
             <span>Check-out</span>
-            <input
-              id="departureDate"
-              name="departureDate"
-              type="date"
-              required
-            />
+            <input id="departureDate" name="departureDate" type="date" required />
           </label>
 
           <div class="search-guest-group" aria-label="Guests and rooms">
             <label id="roomCountField" class="search-field compact-field">
               <span id="roomsLabel">Rooms</span>
-              <input
-                id="rooms"
-                name="rooms"
-                type="number"
-                min="1"
-                max="20"
-                value="1"
-                required
-              />
+              <input id="rooms" name="rooms" type="number" min="1" max="20" value="1" required />
             </label>
             <label class="search-field compact-field">
               <span id="adultsLabel">Adults / room</span>
-              <input
-                id="adults"
-                name="adults"
-                type="number"
-                min="1"
-                max="10"
-                value="2"
-                required
-              />
+              <input id="adults" name="adults" type="number" min="1" max="10" value="2" required />
             </label>
             <label class="search-field compact-field">
               <span id="childrenLabel">Children / room</span>
-              <input
-                id="children"
-                name="children"
-                type="number"
-                min="0"
-                max="6"
-                value="0"
-                required
-              />
+              <input id="children" name="children" type="number" min="0" max="6" value="0" required />
             </label>
           </div>
 
-          <button class="button button-primary search-button" type="submit">
-            Search stays
-          </button>
+          <button class="button button-primary search-button" type="submit">Search stays</button>
         </form>
       </section>
 
@@ -227,9 +172,7 @@
       </section>
 
       <section id="stays" class="section stays-section" aria-label="Stay categories">
-        <p id="resultsStatus" class="sr-only" role="status">
-          Loading live properties…
-        </p>
+        <p id="resultsStatus" class="sr-only" role="status">Loading live properties…</p>
         <div id="results" class="property-category-sections" aria-live="polite"></div>
       </section>
 
@@ -242,23 +185,17 @@
           <article>
             <span>01</span>
             <h3>Live availability</h3>
-            <p>
-              See current availability for the dates and stay type you actually want.
-            </p>
+            <p>See current availability for the dates and stay type you actually want.</p>
           </article>
           <article>
             <span>02</span>
             <h3>Transparent pricing</h3>
-            <p>
-              See the stay price clearly before you move into the secure booking flow.
-            </p>
+            <p>See the stay price clearly before you move into the secure booking flow.</p>
           </article>
           <article>
             <span>03</span>
             <h3>Verified confirmation</h3>
-            <p>
-              Your reservation is confirmed only after secure payment is verified.
-            </p>
+            <p>Your reservation is confirmed only after secure payment is verified.</p>
           </article>
         </div>
       </section>
@@ -270,9 +207,7 @@
         ><span><strong>Wildleaf</strong><small>STAYS</small></span>
       </div>
       <p>Thoughtful stays, naturally.</p>
-      <p class="footer-note">
-        Need booking help? Contact the Wildleaf support team.
-      </p>
+      <p class="footer-note">Need booking help? Contact the Wildleaf support team.</p>
     </footer>
 
     <script src="/customer/config.js"></script>

@@ -19,6 +19,8 @@ export interface PublicPropertySummaryView {
   stateRegion: string | null;
   countryCode: string;
   coverMediaId: string | null;
+  startingRoomRateMinor: number | null;
+  currencyCode: string | null;
 }
 
 export interface PublicRoomCategoryView {

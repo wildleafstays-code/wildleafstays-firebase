@@ -8,8 +8,6 @@ const destinationList = document.querySelector("#destinationList");
 const resultsEyebrow = document.querySelector("#resultsEyebrow");
 const propertyCategorySelect = document.querySelector("#propertyCategory");
 const propertyTypeSelect = document.querySelector("#propertyType");
-const modeButtons = [...document.querySelectorAll("[data-mode]")];
-const roomCountField = document.querySelector("#roomCountField");
 const destinationRail = document.querySelector("#destinationRail");
 const mobileSearchTrigger = document.querySelector("#mobileSearchTrigger");
 const mobileSearchClose = document.querySelector("#mobileSearchClose");
@@ -33,10 +31,19 @@ if (requestedMode === "villa") {
   legacyParams.delete("mode");
   const suffix = legacyParams.toString() ? `?${legacyParams}` : "";
   location.replace(`/customer/entire-properties.html${suffix}`);
+} else if (requestedMode) {
+  const normalizedParams = new URLSearchParams(location.search);
+  normalizedParams.delete("mode");
+  history.replaceState(
+    null,
+    "",
+    normalizedParams.toString()
+      ? `${location.pathname}?${normalizedParams}`
+      : location.pathname,
+  );
 }
 
 const state = {
-  mode: requestedMode === "hotel" ? "hotel" : "all",
   properties: [],
   heroSlides: [],
   heroIndex: 0,
@@ -48,7 +55,6 @@ const state = {
 };
 
 setDefaultDates();
-applyMode();
 void initialize();
 
 form.addEventListener("submit", (event) => {
@@ -68,23 +74,6 @@ form.addEventListener("change", updateMobileSearchSummary);
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeMobileSearch();
-});
-
-modeButtons.forEach((button) => {
-  button.addEventListener("click", (event) => {
-    const mode = button.dataset.mode;
-    if (!["all", "hotel", "villa"].includes(mode)) return;
-    if (mode === "villa") {
-      if (button.tagName !== "A") {
-        event.preventDefault();
-        location.assign("/customer/entire-properties.html");
-      }
-      return;
-    }
-    state.mode = mode;
-    applyMode();
-    renderProperties(state.properties);
-  });
 });
 
 async function initialize() {
@@ -343,29 +332,23 @@ function updateResultsHeading(destination, categoryId, typeId) {
     propertyType?.name ||
     category?.homepageHeading ||
     category?.name ||
-    (state.mode === "hotel" ? "Book by room" : "Stay categories");
+    "Stay categories";
   const destinationLabel = destination ? ` around ${destination}` : "";
   if (resultsEyebrow) resultsEyebrow.textContent = "";
   if (resultsTitle) resultsTitle.textContent = `${label}${destinationLabel}`;
 }
 
 function renderProperties(properties) {
-  const visibleProperties = properties.filter((property) =>
-    saleModeAllows(property.saleMode, state.mode),
-  );
+  const visibleProperties = properties.filter(isRoomBookable);
   updateHero(visibleProperties);
   results.replaceChildren();
 
   if (!visibleProperties.length) {
-    resultsStatus.textContent = "No live properties match these filters yet.";
+    resultsStatus.textContent = "No live room-booking properties match these filters yet.";
     const empty = element("div", "empty-state");
     empty.append(
       element("h3", "", "No stays found"),
-      element(
-        "p",
-        "",
-        "Try another destination, category, Property Type or booking style.",
-      ),
+      element("p", "", "Try another destination, category or Property Type."),
     );
     results.append(empty);
     return;
@@ -444,7 +427,6 @@ function propertyCard(property, index) {
       "listing-type-badge",
       property.propertyTypeName || property.propertyCategoryName || "Wildleaf stay",
     ),
-    element("span", "property-visual-symbol", state.mode === "villa" ? "⌂" : "▦"),
   );
 
   const body = element("div", "property-card-body");
@@ -454,38 +436,25 @@ function propertyCard(property, index) {
   body.append(
     element("p", "property-location", location || property.countryCode),
     element("h3", "", property.name),
-    element(
-      "p",
-      "property-description",
-      property.shortDescription ||
-        "A distinctive Wildleaf stay with live availability and secure booking.",
-    ),
   );
 
-  const tags = element("div", "property-tags");
-  if (property.propertyCategoryName) {
-    tags.append(element("span", "tag", property.propertyCategoryName));
+  if (property.startingRoomRateMinor !== null && property.startingRoomRateMinor !== undefined) {
+    const price = element("p", "property-card-price");
+    price.append(
+      element("span", "", "From"),
+      element(
+        "strong",
+        "",
+        formatMinorPrice(property.startingRoomRateMinor, property.currencyCode || "INR"),
+      ),
+      element("span", "", "/ night"),
+    );
+    body.append(price);
   }
-  if (property.propertyTypeName) {
-    tags.append(element("span", "tag", property.propertyTypeName));
-  }
-  const bookingMode = bookingModeForProperty(property);
-  tags.append(
-    element(
-      "span",
-      "tag",
-      bookingMode === "villa" ? "Entire property" : "Book by room",
-    ),
-  );
-  body.append(tags);
 
-  const link = element(
-    "a",
-    "button button-primary property-cta",
-    bookingMode === "villa" ? "View entire stay" : "View rooms",
-  );
+  const link = element("a", "button button-primary property-cta", "View rooms");
   link.href = propertyUrl(property);
-  link.setAttribute("aria-label", `Explore ${property.name}`);
+  link.setAttribute("aria-label", `View rooms at ${property.name}`);
   body.append(link);
 
   article.append(visual, body);
@@ -642,12 +611,6 @@ function propertyMediaUrl(publicSlug, mediaId) {
   return `/v1/public/properties/${encodeURIComponent(publicSlug)}/media/${encodeURIComponent(mediaId)}`;
 }
 
-function bookingModeForProperty(property) {
-  if (state.mode === "villa") return "villa";
-  if (state.mode === "hotel") return "hotel";
-  return property.saleMode === "FULL_PROPERTY_ONLY" ? "villa" : "hotel";
-}
-
 function propertyUrl(property) {
   const params = new URLSearchParams({
     slug: property.publicSlug,
@@ -656,39 +619,9 @@ function propertyUrl(property) {
     rooms: form.rooms.value,
     adults: form.adults.value,
     children: form.children.value,
-    mode: bookingModeForProperty(property),
+    mode: "hotel",
   });
   return `/customer/property.html?${params}`;
-}
-
-function applyMode() {
-  const entireProperty = state.mode === "villa";
-  const allStays = state.mode === "all";
-  form.classList.toggle("villa-search", entireProperty);
-  modeButtons.forEach((button) => {
-    const selected = button.dataset.mode === state.mode;
-    button.classList.toggle("active", selected);
-    if (button.tagName === "BUTTON") {
-      button.setAttribute("aria-pressed", String(selected));
-    } else {
-      button.removeAttribute("aria-current");
-    }
-  });
-  roomCountField.classList.toggle("hidden", entireProperty);
-  form.rooms.value = entireProperty ? "1" : form.rooms.value || "1";
-  document.querySelector("#adultsLabel").textContent =
-    entireProperty || allStays ? "Adults" : "Adults / room";
-  document.querySelector("#childrenLabel").textContent =
-    entireProperty || allStays ? "Children" : "Children / room";
-  document.querySelector(".search-button").textContent = "Search stays";
-  const modeQuery = state.mode === "all" ? "" : `?mode=${state.mode}`;
-  history.replaceState(null, "", `${location.pathname}${modeQuery}`);
-  updateResultsHeading(
-    form.destination.value.trim(),
-    propertyCategorySelect?.value || "",
-    propertyTypeSelect?.value || "",
-  );
-  updateMobileSearchSummary();
 }
 
 function openMobileSearch() {
@@ -709,17 +642,13 @@ function updateMobileSearchSummary() {
 
   const adults = Math.max(1, Number(form.adults.value) || 1);
   const children = Math.max(0, Number(form.children.value) || 0);
-  const rooms =
-    state.mode === "villa" ? 1 : Math.max(1, Number(form.rooms.value) || 1);
+  const rooms = Math.max(1, Number(form.rooms.value) || 1);
   const guestCount = adults + children;
   const dates =
     form.arrivalDate.value && form.departureDate.value
       ? `${shortDate(form.arrivalDate.value)} – ${shortDate(form.departureDate.value)}`
       : "Add dates";
-  const roomLabel =
-    state.mode === "villa"
-      ? "entire property"
-      : `${rooms} ${rooms === 1 ? "room" : "rooms"}`;
+  const roomLabel = `${rooms} ${rooms === 1 ? "room" : "rooms"}`;
   mobileSearchMeta.textContent =
     `${dates} · ${guestCount} ${guestCount === 1 ? "guest" : "guests"} · ${roomLabel}`;
 }
@@ -733,11 +662,20 @@ function shortDate(value) {
   }).format(date);
 }
 
-function saleModeAllows(saleMode, mode) {
-  if (mode === "all") return true;
-  if (mode === "villa")
-    return saleMode === "FULL_PROPERTY_ONLY" || saleMode === "BOTH";
-  return !saleMode || saleMode === "ROOMS_ONLY" || saleMode === "BOTH";
+function isRoomBookable(property) {
+  return (
+    !property.saleMode ||
+    property.saleMode === "ROOMS_ONLY" ||
+    property.saleMode === "BOTH"
+  );
+}
+
+function formatMinorPrice(minor, currencyCode) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: currencyCode || "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(minor || 0) / 100);
 }
 
 function renderLoadingCards() {
@@ -764,10 +702,7 @@ function renderError(error) {
   );
   const retry = element("button", "button button-secondary", "Try again");
   retry.type = "button";
-  retry.addEventListener(
-    "click",
-    () => void loadProperties(),
-  );
+  retry.addEventListener("click", () => void loadProperties());
   panel.append(retry);
   results.replaceChildren(panel);
 }
@@ -809,21 +744,4 @@ function element(tag, className = "", text = "") {
   if (className) node.className = className;
   if (text) node.textContent = text;
   return node;
-}
-
-function titleCase(value) {
-  return String(value)
-    .toLowerCase()
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function saleModeLabel(value) {
-  return (
-    {
-      ROOMS_ONLY: "Rooms",
-      FULL_PROPERTY_ONLY: "Entire property",
-      BOTH: "Rooms or entire property",
-    }[value] || titleCase(value)
-  );
 }

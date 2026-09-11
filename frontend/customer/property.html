@@ -16,6 +16,7 @@
     />
     <link rel="stylesheet" href="/customer/styles.css" />
     <link rel="stylesheet" href="/customer/experience.css" />
+    <link rel="stylesheet" href="/customer/booking-discovery.css" />
   </head>
   <body class="property-body">
     <header class="site-header property-header">
@@ -46,6 +47,14 @@
             <p id="propertySummary" class="property-summary">
               Checking the latest property information.
             </p>
+            <a
+              id="entirePropertySwitch"
+              class="property-mode-alternative hidden"
+              href="#"
+            >
+              You can book this entire property
+              <span aria-hidden="true">→</span>
+            </a>
           </div>
           <div id="propertyFacts" class="property-quick-facts"></div>
           <div id="amenities" class="amenity-list property-key-amenities"></div>
@@ -134,17 +143,9 @@
             </div>
           </details>
 
-          <section
-            id="quoteSection"
-            class="panel-section hidden"
-            aria-live="polite"
-          ></section>
+          <section id="quoteSection" class="panel-section hidden" aria-live="polite"></section>
           <section id="guestSection" class="panel-section hidden"></section>
-          <section
-            id="statusSection"
-            class="panel-section status-section hidden"
-            aria-live="polite"
-          ></section>
+          <section id="statusSection" class="panel-section status-section hidden" aria-live="polite"></section>
 
           <section class="property-overview panel-section">
             <div class="section-heading compact-heading">
@@ -167,11 +168,7 @@
         </div>
       </section>
 
-      <div
-        id="selectionRibbon"
-        class="selection-ribbon hidden"
-        aria-live="polite"
-      >
+      <div id="selectionRibbon" class="selection-ribbon hidden" aria-live="polite">
         <div class="selection-ribbon-inner">
           <div class="selection-ribbon-copy">
             <span id="selectionSummary">No rooms selected</span>
@@ -182,51 +179,22 @@
             <strong id="selectionTotal">—</strong>
             <span>Exact GST, fees and guest pricing confirmed before payment</span>
           </div>
-          <button
-            id="selectionContinue"
-            class="button button-primary selection-continue"
-            type="button"
-          >
+          <button id="selectionContinue" class="button button-primary selection-continue" type="button">
             Continue
           </button>
         </div>
       </div>
 
-      <dialog
-        id="propertyPhotoDialog"
-        class="property-photo-dialog"
-        aria-label="Property photo viewer"
-      >
+      <dialog id="propertyPhotoDialog" class="property-photo-dialog" aria-label="Property photo viewer">
         <div class="photo-dialog-shell">
           <div class="photo-dialog-toolbar">
             <span id="photoDialogCounter" class="photo-dialog-counter"></span>
-            <button
-              id="photoDialogClose"
-              class="photo-dialog-close"
-              type="button"
-              aria-label="Close photo viewer"
-            >
-              ×
-            </button>
+            <button id="photoDialogClose" class="photo-dialog-close" type="button" aria-label="Close photo viewer">×</button>
           </div>
           <div class="photo-dialog-stage">
-            <button
-              id="photoDialogPrev"
-              class="photo-dialog-nav photo-dialog-prev"
-              type="button"
-              aria-label="Previous photo"
-            >
-              ‹
-            </button>
+            <button id="photoDialogPrev" class="photo-dialog-nav photo-dialog-prev" type="button" aria-label="Previous photo">‹</button>
             <img id="photoDialogImage" alt="" />
-            <button
-              id="photoDialogNext"
-              class="photo-dialog-nav photo-dialog-next"
-              type="button"
-              aria-label="Next photo"
-            >
-              ›
-            </button>
+            <button id="photoDialogNext" class="photo-dialog-nav photo-dialog-next" type="button" aria-label="Next photo">›</button>
           </div>
           <div class="photo-dialog-footer">
             <p id="photoDialogCaption" class="photo-dialog-caption"></p>
@@ -242,5 +210,6 @@
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="/customer/config.js"></script>
     <script type="module" src="/customer/property.js"></script>
+    <script type="module" src="/customer/property-booking-mode-nav.js"></script>
   </body>
 </html>
