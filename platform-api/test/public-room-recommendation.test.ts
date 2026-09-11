@@ -28,6 +28,8 @@ const property: PublicPropertyDetailView = {
   stateRegion: "Himachal Pradesh",
   countryCode: "IN",
   coverMediaId: null,
+  startingRoomRateMinor: 400_000,
+  currencyCode: "INR",
   description: null,
   checkInTime: "14:00",
   checkOutTime: "11:00",
