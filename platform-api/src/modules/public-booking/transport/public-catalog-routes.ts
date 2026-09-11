@@ -703,6 +703,38 @@ const publicQuoteGuestAgePolicySchema = {
   }
 } as const;
 
+const publicQuoteUnitViewSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "unitIndex",
+    "adults",
+    "childAges",
+    "children",
+    "infants",
+    "occupancyCount",
+    "childLimitCount",
+    "chargeableChildren",
+    "extraAdults",
+    "extraChildren"
+  ],
+  properties: {
+    unitIndex: { type: "integer", minimum: 1 },
+    adults: { type: "integer", minimum: 1 },
+    childAges: {
+      type: "array",
+      items: { type: "integer", minimum: 0, maximum: 17 }
+    },
+    children: { type: "integer", minimum: 0 },
+    infants: { type: "integer", minimum: 0 },
+    occupancyCount: { type: "integer", minimum: 1 },
+    childLimitCount: { type: "integer", minimum: 0 },
+    chargeableChildren: { type: "integer", minimum: 0 },
+    extraAdults: { type: "integer", minimum: 0 },
+    extraChildren: { type: "integer", minimum: 0 }
+  }
+} as const;
+
 const publicCancellationTierSchema = {
   type: "object",
   additionalProperties: false,
