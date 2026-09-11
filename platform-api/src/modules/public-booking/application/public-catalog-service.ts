@@ -30,7 +30,9 @@ function propertySummary(record: PublicPropertyRecord): PublicPropertySummaryVie
     city: record.city,
     stateRegion: record.state_region,
     countryCode: record.country_code,
-    coverMediaId: record.cover_media_id
+    coverMediaId: record.cover_media_id,
+    startingRoomRateMinor: record.starting_room_rate_minor,
+    currencyCode: record.currency_code
   };
 }
 
