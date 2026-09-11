@@ -3,6 +3,48 @@ import type { Database } from "../../../infrastructure/database/types.js";
 
 type DbExecutor = Kysely<Database> | Transaction<Database>;
 
+const startingRoomRateMinor = sql<number | null>`(
+  select rpp.base_rate_minor
+  from rate_plan_products rpp
+  inner join rate_plans rp
+    on rp.id = rpp.rate_plan_id
+   and rp.organization_id = rpp.organization_id
+   and rp.property_id = rpp.property_id
+  inner join room_categories rc
+    on rc.id = rpp.room_category_id
+   and rc.organization_id = rpp.organization_id
+   and rc.property_id = rpp.property_id
+  where rpp.organization_id = p.organization_id
+    and rpp.property_id = p.id
+    and rpp.product_type = 'ROOM_CATEGORY'
+    and rpp.status = 'ACTIVE'
+    and rp.status = 'ACTIVE'
+    and rc.status = 'ACTIVE'
+  order by rpp.base_rate_minor asc, rpp.id asc
+  limit 1
+)`;
+
+const startingRoomCurrencyCode = sql<string | null>`(
+  select rp.currency_code
+  from rate_plan_products rpp
+  inner join rate_plans rp
+    on rp.id = rpp.rate_plan_id
+   and rp.organization_id = rpp.organization_id
+   and rp.property_id = rpp.property_id
+  inner join room_categories rc
+    on rc.id = rpp.room_category_id
+   and rc.organization_id = rpp.organization_id
+   and rc.property_id = rpp.property_id
+  where rpp.organization_id = p.organization_id
+    and rpp.property_id = p.id
+    and rpp.product_type = 'ROOM_CATEGORY'
+    and rpp.status = 'ACTIVE'
+    and rp.status = 'ACTIVE'
+    and rc.status = 'ACTIVE'
+  order by rpp.base_rate_minor asc, rpp.id asc
+  limit 1
+)`;
+
 export interface PublicDestinationRecord {
   city: string;
   state_region: string | null;
@@ -29,6 +71,8 @@ export interface PublicPropertyRecord {
   check_in_time: string | null;
   check_out_time: string | null;
   cover_media_id: string | null;
+  starting_room_rate_minor: number | null;
+  currency_code: string | null;
 }
 
 export interface PublicRoomCategoryRecord {
@@ -160,7 +204,9 @@ export class PublicCatalogRepository {
         "p.country_code as country_code",
         "p.check_in_time as check_in_time",
         "p.check_out_time as check_out_time",
-        "cover.id as cover_media_id"
+        "cover.id as cover_media_id",
+        startingRoomRateMinor.as("starting_room_rate_minor"),
+        startingRoomCurrencyCode.as("currency_code")
       ])
       .distinct()
       .where("p.status", "=", "LIVE")
@@ -231,7 +277,9 @@ export class PublicCatalogRepository {
         "p.country_code as country_code",
         "p.check_in_time as check_in_time",
         "p.check_out_time as check_out_time",
-        "cover.id as cover_media_id"
+        "cover.id as cover_media_id",
+        startingRoomRateMinor.as("starting_room_rate_minor"),
+        startingRoomCurrencyCode.as("currency_code")
       ])
       .where("p.status", "=", "LIVE")
       .where("p.public_slug", "=", publicSlug)
