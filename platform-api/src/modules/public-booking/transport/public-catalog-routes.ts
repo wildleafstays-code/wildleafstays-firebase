@@ -104,7 +104,9 @@ const propertySummarySchema = {
     "city",
     "stateRegion",
     "countryCode",
-    "coverMediaId"
+    "coverMediaId",
+    "startingRoomRateMinor",
+    "currencyCode"
   ],
   properties: {
     publicSlug: { type: "string" },
@@ -119,7 +121,14 @@ const propertySummarySchema = {
     city: nullableString,
     stateRegion: nullableString,
     countryCode: { type: "string", pattern: "^[A-Z]{2}$" },
-    coverMediaId: nullableUuid
+    coverMediaId: nullableUuid,
+    startingRoomRateMinor: nullableInteger,
+    currencyCode: {
+      anyOf: [
+        { type: "string", minLength: 3, maxLength: 3 },
+        { type: "null" }
+      ]
+    }
   }
 } as const;
 
@@ -694,38 +703,6 @@ const publicQuoteGuestAgePolicySchema = {
     infantsCountTowardsOccupancy: { type: "boolean" },
     infantsCountTowardsChildLimit: { type: "boolean" },
     infantsChargeAsChildren: { type: "boolean" }
-  }
-} as const;
-
-const publicQuoteUnitViewSchema = {
-  type: "object",
-  additionalProperties: false,
-  required: [
-    "unitIndex",
-    "adults",
-    "childAges",
-    "children",
-    "infants",
-    "occupancyCount",
-    "childLimitCount",
-    "chargeableChildren",
-    "extraAdults",
-    "extraChildren"
-  ],
-  properties: {
-    unitIndex: { type: "integer", minimum: 1 },
-    adults: { type: "integer", minimum: 1 },
-    childAges: {
-      type: "array",
-      items: { type: "integer", minimum: 0, maximum: 17 }
-    },
-    children: { type: "integer", minimum: 0 },
-    infants: { type: "integer", minimum: 0 },
-    occupancyCount: { type: "integer", minimum: 1 },
-    childLimitCount: { type: "integer", minimum: 0 },
-    chargeableChildren: { type: "integer", minimum: 0 },
-    extraAdults: { type: "integer", minimum: 0 },
-    extraChildren: { type: "integer", minimum: 0 }
   }
 } as const;
 
