@@ -18,6 +18,10 @@ const homeStyles = await readFile(
   new URL("../experience.css", import.meta.url),
   "utf8",
 );
+const discoveryStyles = await readFile(
+  new URL("../booking-discovery.css", import.meta.url),
+  "utf8",
+);
 
 const entirePropertyHtml = await readFile(
   new URL("../entire-properties.html", import.meta.url),
@@ -36,19 +40,56 @@ const propertySource = await readFile(
   new URL("../property.js", import.meta.url),
   "utf8",
 );
+const bookingModeNavSource = await readFile(
+  new URL("../property-booking-mode-nav.js", import.meta.url),
+  "utf8",
+);
 
-test("booking style remains independent from database Property Category", () => {
-  assert.match(homeHtml, /id="modeAll"/);
-  assert.match(homeHtml, /id="modeHotel"/);
-  assert.match(homeHtml, /id="modeVilla"/);
-  assert.match(homeHtml, />Book by room</);
-  assert.match(homeHtml, />Entire property</);
-  assert.match(homeSource, /saleModeAllows/);
-  assert.match(homeSource, /ROOMS_ONLY/);
-  assert.match(homeSource, /FULL_PROPERTY_ONLY/);
-  assert.match(homeSource, /function bookingModeForProperty\(property\)/);
-  assert.match(homeSource, /mode: bookingModeForProperty\(property\)/);
-  assert.match(homeSource, /if \(mode === "all"\) return true/);
+test("homepage is room-booking discovery with one Entire Property doorway", () => {
+  assert.doesNotMatch(homeHtml, /id="modeAll"/);
+  assert.doesNotMatch(homeHtml, /id="modeHotel"/);
+  assert.doesNotMatch(homeHtml, /id="modeVilla"/);
+  assert.doesNotMatch(homeHtml, /class="stay-mode-switch"/);
+  assert.match(
+    homeHtml,
+    /id="entirePropertyEntry"[\s\S]*href="\/customer\/entire-properties\.html"/,
+  );
+  assert.match(homeSource, /function isRoomBookable\(property\)/);
+  assert.match(homeSource, /property\.saleMode === "ROOMS_ONLY"/);
+  assert.match(homeSource, /property\.saleMode === "BOTH"/);
+  assert.doesNotMatch(homeSource, /saleModeAllows/);
+  assert.doesNotMatch(homeSource, /function bookingModeForProperty/);
+  assert.match(homeSource, /mode: "hotel"/);
+});
+
+test("homepage cards stay concise and use the canonical starting room rate", () => {
+  assert.match(homeSource, /property\.startingRoomRateMinor/);
+  assert.match(homeSource, /formatMinorPrice/);
+  assert.match(homeSource, /"View rooms"/);
+  assert.doesNotMatch(
+    homeSource,
+    /A distinctive Wildleaf stay with live availability and secure booking/,
+  );
+  assert.doesNotMatch(homeSource, /property-tags/);
+  assert.match(discoveryStyles, /\.property-card-price/);
+  assert.match(
+    discoveryStyles,
+    /\.property-category-heading h2[\s\S]*font-family: "DM Sans"/,
+  );
+  assert.match(
+    discoveryStyles,
+    /\.home-page \.property-card-body h3[\s\S]*font-family: "DM Sans"/,
+  );
+});
+
+test("BOTH properties offer a clean switch from room booking to entire-property booking", () => {
+  assert.match(propertyHtml, /id="entirePropertySwitch"/);
+  assert.match(propertyHtml, /You can book this entire property/);
+  assert.match(bookingModeNavSource, /data\.property\?\.saleMode !== "BOTH"/);
+  assert.match(bookingModeNavSource, /villaParams\.set\("mode", "villa"\)/);
+  assert.match(bookingModeNavSource, /villaParams\.set\("rooms", "1"\)/);
+  assert.match(bookingModeNavSource, /switchLink\.classList\.remove\("hidden"\)/);
+  assert.match(discoveryStyles, /\.property-mode-alternative/);
 });
 
 test("homepage categories, sliders and filters are generated from database taxonomy", () => {
@@ -72,12 +113,12 @@ test("homepage categories, sliders and filters are generated from database taxon
   );
 });
 
-test("site root opens the all-stays discovery homepage by default", () => {
+test("site root opens the room-discovery homepage by default", () => {
   const rootRedirect = firebaseConfig.hosting.redirects.find(
     (redirect) => redirect.source === "/",
   );
   assert.equal(rootRedirect?.destination, "/customer/");
-  assert.doesNotMatch(rootRedirect?.destination || "", /mode=hotel/);
+  assert.doesNotMatch(rootRedirect?.destination || "", /mode=/);
 });
 
 test("homepage discovery removes redundant heading layers and keeps live categories primary", () => {
@@ -151,7 +192,7 @@ test("homepage sections use subtle alternating surfaces to avoid a monotone scro
 test("Entire Property opens a dedicated live catalogue grouped alphabetically by destination", () => {
   assert.match(
     homeHtml,
-    /id="modeVilla"[\s\S]*href="\/customer\/entire-properties\.html"/,
+    /id="entirePropertyEntry"[\s\S]*href="\/customer\/entire-properties\.html"/,
   );
   assert.match(entirePropertyHtml, /id="entirePropertyFilters"/);
   assert.match(entirePropertyHtml, /id="catalogDestination"/);
