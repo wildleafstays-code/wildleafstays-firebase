@@ -124,10 +124,7 @@ const propertySummarySchema = {
     coverMediaId: nullableUuid,
     startingRoomRateMinor: nullableInteger,
     currencyCode: {
-      anyOf: [
-        { type: "string", minLength: 3, maxLength: 3 },
-        { type: "null" }
-      ]
+      anyOf: [{ type: "string", minLength: 3, maxLength: 3 }, { type: "null" }]
     }
   }
 } as const;
